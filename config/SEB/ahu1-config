@@ -1,0 +1,59 @@
+{
+    "campus": "PNNL", 
+    "building": "SEB", 
+    "input_data_timezone": "UTC", 
+    "supplier_market_name": "air_AHU1", 
+    "consumer_market_name": "electric", 
+    "agent_name": "ahu1", 
+    "inputs": [
+        {
+            "mapped": "sfs", 
+            "point": "SupplyFanStatus", 
+            "topic": "devices/PNNL/SEB/AHU1/all", 
+            "inital_value": 0
+        }, 
+        {
+            "mapped": "oat", 
+            "point": "OutdoorAirTemperature", 
+            "topic": "devices/PNNL/SEB/AHU1/all", 
+            "inital_value": 72.0
+        }, 
+        {
+            "mapped": "mat", 
+            "point": "MixedAirTemperature", 
+            "topic": "devices/PNNL/SEB/AHU1/all", 
+            "inital_value": 72.0
+        }, 
+        {
+            "mapped": "dat", 
+            "point": "DischargeAirTemperature", 
+            "topic": "devices/PNNL/SEB/AHU1/all", 
+            "inital_value": 55.0
+        }, 
+        {
+            "mapped": "saf", 
+            "point": "SupplyAirFlow", 
+            "topic": "devices/PNNL/SEB/AHU1/all", 
+            "inital_value": 0.0
+        }
+    ], 
+    "outputs": [], 
+    "schedule": {},
+    "model_parameters": {
+        "equipment_configuration": {
+            "has_economizer": true,
+            "economizer_limit": 68.0,
+            "supply-air sepoint": 55.0,
+            "nominal zone-setpoint": 72.0,
+            "building chiller": true
+        }, 
+        "model_configuration": {
+            "c0": -0.0053,
+            "c1": 0.4031,
+            "c2": -0.1032,
+            "c3": 0.0227,
+            "COP" : 6.16,
+            "cpAir": 1.006
+        }
+    }
+}
