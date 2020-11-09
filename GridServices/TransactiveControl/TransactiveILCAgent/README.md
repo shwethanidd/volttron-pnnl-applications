@@ -1,8 +1,4 @@
-.. _TCCILC_Agent:
-
-=======================================
-Transactive ILC Coordinator Application
-=======================================
+# Transactive ILC Coordinator Application
 
 This application allows ILC to participate in either real-time pricing (RTP)
 markets or single-step market-based control. Further enhancements of the

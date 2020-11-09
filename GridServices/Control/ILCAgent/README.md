@@ -1,8 +1,4 @@
-.. _ILC_Agent:
-
-==========================================
-Intelligent Load Control (ILC) Application
-==========================================
+# Intelligent Load Control (ILC) Application
 
 ILC supports traditional demand response as well as transactive energy
 services. ILC manages controllable loads while also mitigating

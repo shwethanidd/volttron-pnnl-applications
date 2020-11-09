@@ -1,11 +1,6 @@
-.. _TCCILC_Agent:
+# Transactive Applications
 
-========================
-Transactive Applications
-========================
-
-Transactive Control and Coordination (TCC) Application
-------------------------------------------------------
+## Transactive Control and Coordination (TCC) Application
 
 TCC creates markets at different levels to make control decisions. Market-based
 control, an example of transactive control, is a distributed control strategy.
@@ -56,8 +51,7 @@ the air-handling unit, and (4) a set of RTU models for commercial buildings
 that have one or more zones conditioned by packaged rooftop air conditioners or
 heat pumps.
 
-Transactive ILC Coordinator Application
----------------------------------------
+## Transactive ILC Coordinator Application
 
 This application allows ILC to participate in either real-time pricing (RTP)
 markets or single-step market-based control. Further enhancements of the
