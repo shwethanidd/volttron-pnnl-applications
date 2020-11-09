@@ -3,3 +3,4 @@ __pycache__
 .idea/
 env/
 /docs/build/*
+/GridServices/TransactiveControl/transactive_utils.egg-info/*
