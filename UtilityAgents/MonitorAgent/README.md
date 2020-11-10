@@ -1,4 +1,4 @@
-#Monitor Agent
+# Monitor Agent
 
 Monitors data coming of the message bus and evaluates rules declared in the 
 configuration file.  If the rule(s) is evaluated as True, for for the 

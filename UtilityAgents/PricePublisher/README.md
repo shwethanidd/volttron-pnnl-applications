@@ -1,4 +1,4 @@
-#PricePublisher
+# PricePublisher
 
 Reads a csv file with time based electric price information and publishes data 
 an array of the last 24-hour prices.  Current implementation assumes that price 
