@@ -42,6 +42,6 @@ demonstrate Transactive Network Template (TNT) framework that allows DERs to par
 
 - **Simulations** - Simulation support for VOLTTRON applications. The simulation agents include EnergyPlus and Modelica agents
 
-- **UtilityAgents** - Set of utility agents
+- **UtilityAgents** - Agents that are designed to peform specific auxilliary tasks to support deployment of TCC
 
 
