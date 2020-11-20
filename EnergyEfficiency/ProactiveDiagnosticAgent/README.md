@@ -46,7 +46,11 @@ The json format of the config files are specified below.
     "fault_code": 1,
     "non_fault_code": 0,
     "fault_condition": "all", 
-    # all or any
+    # There are two types of fault conditions
+    # 1. all: if all conditions are "true" in the rules list, then only proactive agent sends fault code.
+    # Otherwise, it sends non fault code.
+    # 2. any: if atleast one of the conditions is true in the list, then it sends fault code.
+    # Otherwisem it sends non fault code. 
     "control": [
         {
             "points": {

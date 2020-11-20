@@ -1,7 +1,6 @@
 # METER Agent
-It is the transactive controls and coordination (TCC) agent that interacts with volttron market service
- as a electric seller. The meter agent provides either a fixed price or fixed demand supply curve to 
- the volttron market service. 
+It is the transactive controls and coordination (TCC) agent that interacts with volttron market service as a electric seller.
+ The meter agent provides either a fixed price or fixed demand supply curve to the volttron market service. 
  
 ## METER Agent Configuration
 

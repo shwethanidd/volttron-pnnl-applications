@@ -9,13 +9,13 @@ qualitative rules (type of zone).
 
 ## ILC Agent Configuration
 
-For this agent you will require four config files; 1. ILC (main) config f 2. Control config file,
-and 3. criteria config file The json format of the config files are specified below.
+For ILC agent, you will require four config files; 1. ILC (main) config 2. Control config file, 3. criteria config file
+ , and 4. pairwise_criteria_file. The json format of the config files are specified below.
 In control and criteria files contains both curtail setting and augment settings.
  
 These config files can be created using the config-web-tool: https://ilc-configuration-tool.web.app/.
-You can follow instruction from the ilc-readthedocs https://userguide-ilc.readthedocs.io/en/latest/ for while using this
-config-web-tool
+You can follow instruction from the ilc-readthedocs https://userguide-ilc.readthedocs.io/en/latest/ while creating config
+file using the config-web-tool
 
 *  ILC config file:
 
