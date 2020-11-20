@@ -42,8 +42,8 @@ Agent config file:
     ]
 }
 ````
-## Install and activate volttron environment
-Refer following volttron readthedocs for Installing, starting and activating volttron environment: 
+## Install and activate VOLTTRON environment
+For installing, starting, and activating the VOLTTRON environment, refer to the following VOLTTRON readthedocs: 
 https://volttron.readthedocs.io/en/develop/introduction/platform-install.html
 
 ## Install emailer agent

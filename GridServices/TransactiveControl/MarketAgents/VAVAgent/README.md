@@ -1,13 +1,13 @@
 # VAV Agent
 
-It is the transactive controls ans coordination (TCC) agent that interacts with volttron market service
-as a consumer of cooling/heating air that provide cooling/heating to building zones 
+It is the transactive controls and coordination (TCC) agent that interacts with volttron market service
+as a consumer of cooling/heating air that regulates cooling/heating to building zones 
 
 ## VAV Agent Configuration
 
 You can specify the configuration in either json or yaml format. The json format is specified below:
 
-Agent config file:
+* Agent config file:
 
 ```` json
 {
@@ -209,8 +209,8 @@ Agent config file:
 User can create a config file using the tcc-config-web-tool: https://tcc-configuration-tool.web.app/
 and following instruction from the tcc-userguide https://tcc-userguide.readthedocs.io/en/latest/
 
-## Install and activate volttron environment
-Refer following volttron readthedocs for Installing, starting and activating volttron environment: 
+## Install and activate VOLTTRON environment
+For installing, starting, and activating the VOLTTRON environment, refer to the following VOLTTRON readthedocs: 
 https://volttron.readthedocs.io/en/develop/introduction/platform-install.html
 
 ## Installing and Running VAV Agent

@@ -1,8 +1,8 @@
 # ProactiveDiagnosis Agent
 
-Proactive Diagnosis agent allows you to write different recipes for diagnosis and it evaluates
+Proactive Diagnosis agent allows you to write different recipes for diagnosis, and it evaluates
 different diagnostics rules. Based on whether the diagnosis rules are true or false, it publishes a fault code
-or non-fault code mentioned in the config file.
+or non-fault code defined in the config file.
 
 ## ProactiveDiagnosis Agent Configuration
 
@@ -94,8 +94,8 @@ The json format of the config files are specified below.
     ]
 }
 ````
-## Install and activate volttron environment
-Refer following volttron readthedocs for Installing, starting and activating volttron environment: 
+## Install and activate VOLTTRON environment
+For installing, starting, and activating the VOLTTRON environment, refer to the following VOLTTRON readthedocs: 
 https://volttron.readthedocs.io/en/develop/introduction/platform-install.html
 
 ## Installing and Running ProactiveDiagnosis Agent

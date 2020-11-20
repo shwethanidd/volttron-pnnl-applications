@@ -327,13 +327,12 @@ https://www.pnnl.gov/main/publications/external/technical_reports/PNNL-26034.pdf
 }
 ```
 
-## Install and activate volttron environment
-Refer following volttron readthedocs for Installing, starting and activating volttron environment: 
+## Install and activate VOLTTRON environment
+For installing, starting, and activating the VOLTTRON environment, refer to the following VOLTTRON readthedocs: 
 https://volttron.readthedocs.io/en/develop/introduction/platform-install.html
 
 ## Installing and Running ILC Agent
 Install and start the ILC Agent using the script install-agent.py as describe below:
-
 ```
 python scripts/install-agent.py -s <top most folder of the agent> 
                                 -c <Agent config file>

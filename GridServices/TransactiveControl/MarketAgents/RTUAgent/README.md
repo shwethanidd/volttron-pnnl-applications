@@ -97,8 +97,8 @@ Agent config file:
 User can create a config file using the tcc-config-web-tool: https://tcc-configuration-tool.web.app/
 and following instruction from the tcc-userguide https://tcc-userguide.readthedocs.io/en/latest/b.app/
 
-## Install and activate volttron environment
-Refer following volttron readthedocs for Installing, starting and activating volttron environment: 
+## Install and activate VOLTTRON environment
+For installing, starting, and activating the VOLTTRON environment, refer to the following VOLTTRON readthedocs: 
 https://volttron.readthedocs.io/en/develop/introduction/platform-install.html
 
 ## Installing and Running RTU Agent
