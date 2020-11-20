@@ -1,3 +1,4 @@
+
 # PricePublisher
 
 Reads a csv file with time based electric price information and publishes data 
@@ -7,3 +8,40 @@ price information it does not include a timestamp in the message payload that
 contains the array of prices, therefore the agent would need to be designed 
 to utilize price information as given or this agent would need to be extended 
 to include timestamp information as well as the price array.
+
+## PricePublisher Configuration
+
+The yaml format of the config files are specified below. 
+
+Agent config file:
+
+```` yaml
+cron_schedule: '*/5 * * * *'
+price_file: /home/vuzer/transactivecontrol/MarketAgents/config/RTP/RTP-sept.csv
+````
+## Install and activate volttron environment
+Refer following volttron readthedocs for Installing, starting and activating volttron environment: 
+https://volttron.readthedocs.io/en/develop/introduction/platform-install.html
+
+## Installing and Running PricePublisher Agent
+Install and start the PricePublisher Agent using the script install-agent.py as describe below:
+
+```
+python scripts/install-agent.py -s <top most folder of the agent> 
+                                -c <Agent config file>
+                                -i agent.PricePublisher
+                                -t PricePublisher
+                                --start --force
+```
+-s : followed by path of top most folder of the PricePublisher agent
+
+-c : followed by path of the agent config file
+
+-i : followed by agent identity
+
+-t : followed by name tag
+ 
+--start (optional): start after installation
+
+--force (optional): overwrites existing ilc agent with identity "agent.PricePublisher"  
+

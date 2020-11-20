@@ -1,4 +1,4 @@
-{   "email_list": ["robert.lutes@pnnl.gov"],
+{   "email_list": ["user.name@gmail.com"],
     "rules": [
         {
             "condition": "(ZoneTemperatureRm127>75.5) & (OccupancyMode)",
