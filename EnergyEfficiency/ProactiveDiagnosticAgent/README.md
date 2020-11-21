@@ -1,12 +1,21 @@
-# ProactiveDiagnosis Agent
+# ProactiveDiagnostics Agent
 
-Proactive Diagnosis agent allows you to write different recipes for diagnosis, and it evaluates
-different diagnostics rules. Based on whether the diagnosis rules are true or false, it publishes a fault code
-or non-fault code defined in the config file.
+Proactive AFDD is a process that involves automatically initiating changes to cause or
+ to simulate operating conditions that may not occur for some time,
+  thus producing results that might not be available for months otherwise.
+Such tests could be automated to cover a more complete range of conditions
+ or to deepen Diagnostic beyond what might be possible without this capability
+ 
+The Proactive Diagnostic agent allows one to configure proactive diagnostics
+ for nearly any building system. The control action and fault diagnostics rule sets
+ are configured in form of diagnostic recipes. These recipes are contained within 
+ JSON text file(s). The following example configuration is for the detection of faulty or
+ inconsistent mixed-air/discharge-air temperature sensors for AHU/RTU economizer systems. 
+ 
 
-## ProactiveDiagnosis Agent Configuration
+## ProactiveDiagnostic Agent Configuration
 
-In activated VOLTTRON environment, install all the ProactiveDiagnosis dependent python packages
+In activated VOLTTRON environment, install all the ProactiveDiagnostic dependent python packages
 
 ```
 cd EnergyEfficiency/ProactiveDiagnosticAgent
@@ -98,17 +107,17 @@ The json format of the config files are specified below.
 For installing, starting, and activating the VOLTTRON environment, refer to the following VOLTTRON readthedocs: 
 https://volttron.readthedocs.io/en/develop/introduction/platform-install.html
 
-## Installing and Running ProactiveDiagnosis Agent
-Install and start the ProactiveDiagnosis Agent using the script install-agent.py as describe below:
+## Installing and Running ProactiveDiagnostic Agent
+Install and start the ProactiveDiagnostic Agent using the script install-agent.py as describe below:
 
 ```
 python scripts/install-agent.py -s <top most folder of the agent> 
                                 -c <Agent config file>
-                                -i agent.proactivediagnosis
-                                -t proactivediagnosis
+                                -i agent.proactivediagnostic
+                                -t proactivediagnostic
                                 --start --force
 ```
--s : followed by path of top most folder of the Proactive Diagnosis agent
+-s : followed by path of top most folder of the Proactive Diagnostic agent
 
 -c : followed by path of the agent config file
 
@@ -118,6 +127,6 @@ python scripts/install-agent.py -s <top most folder of the agent>
  
 --start (optional): start after installation
 
---force (optional): overwrites existing ilc agent with identity "agent.proactivediagnosis" 
+--force (optional): overwrites existing ilc agent with identity "agent.proactivediagnostic" 
 
 

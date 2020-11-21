@@ -1,15 +1,17 @@
 # ModelicaAgent
 
 On start, publishes a Modelica on a configured topic with a configured Modelica payload.  
-Intended to enable/disable actuation of the TCC control agents during a control test
+Intended to enable/disable actuation of the TCC control agents during a control test.
 
 #Modelica Installation
-For installing setup in Linux based systems, follow the steps described 
+For installing setup in Linux based systems, follow the steps described in
 https://sparxsystems.com/enterprise_architect_user_guide/14.0/model_simulation/installing_openmodelica_on_linux_.html
 
 ## ModelicaAgent Configuration
 
-The json format of the config files are specified below. Agent config file:
+User can specify the configuration in either json or yaml format. The json format is specified below: 
+
+* Agent config file:
 
 ```` json
 {

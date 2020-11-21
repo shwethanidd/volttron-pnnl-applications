@@ -1,14 +1,15 @@
 # UnControlLoad Agent
 
-It is the transactive controls ansd coordination (TCC) agent that interacts with volttron market service
- as a consumer electricity. This can be any uncontroller devices, for example lighting, AHU, etc.
+Transactive control and coordination (TCC) agent that interacts with the volttron market service
+ as a consumer electricity. This agent bids in a fixed demand curve to the volttron market service that represents
+ the non-transactive (non-controllable) building load.
   
 
 ## UnControlLoad Agent Configuration
 
-The json format of the config files are specified below. 
+You can specify the configuration in either json or yaml format. The json format is specified below:
 
-Agent config file:
+* Agent config file:
 
 ```` json
 {
@@ -160,7 +161,7 @@ Agent config file:
 }
 ````
 User can create a config file using the tcc-config-web-tool: https://tcc-configuration-tool.web.app/
-and following instruction from the tcc-userguide https://tcc-userguide.readthedocs.io/en/latest/
+and follow instructions from the tcc-userguide https://tcc-userguide.readthedocs.io/en/latest/
 
 ## Install and activate VOLTTRON environment
 For installing, starting, and activating the VOLTTRON environment, refer to the following VOLTTRON readthedocs: 

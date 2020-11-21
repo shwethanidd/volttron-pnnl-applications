@@ -1,10 +1,12 @@
 # AHU Agent
 
-It is the transactive controls and coordination (TCC) agent that interacts with volttron market service
- as a consumer electricity and a supplier of cooling air to VAV TCC agent that represent VAV hardware devices
- that provide cooling to building zones 
+Transactive controls and coordination (TCC) agent that interacts with volttron market service
+ as a consumer of electricity and a supplier of cooling air to VAV TCC agent. 
+ This agent represent VAV hardware devices that provide cooling to building zones 
 
 ## AHU Agent Configuration
+
+You can specify the configuration in either json or yaml format. The json format is specified below:
 
 * Agent config file:
 
@@ -71,7 +73,7 @@ It is the transactive controls and coordination (TCC) agent that interacts with 
 }
 ````
 User can create a config file using the tcc-config-web-tool: https://tcc-configuration-tool.web.app/
-and following instruction from the tcc-userguide https://tcc-userguide.readthedocs.io/en/latest/
+and follow instructions from the tcc-userguide https://tcc-userguide.readthedocs.io/en/latest/
 
 ## Install and activate VOLTTRON environment
 For installing, starting, and activating the VOLTTRON environment, refer to the following VOLTTRON readthedocs: 
