@@ -1,8 +1,23 @@
 # AHU Agent
 
 Transactive controls and coordination (TCC) agent that interacts with volttron market service
- as a consumer of electricity and a supplier of cooling air to VAV TCC agent. 
- This agent represent VAV hardware devices that provide cooling to building zones 
+as a consumer of electricity and a supplier of cooling air to VAV TCC agent. 
+This agent represent VAV hardware devices that provide cooling to building zones
+ 
+Swetha's Note: Please explain what does AHU bid in the electricity market. 
+And after the market is cleared how does AHU control the devices.
+ 
+An air handling unit (AHU) that provides air conditioning would obtain electricity at a certain
+cost directly from the energy market and then sell its product—cool air—to zones within the building.
+The zones electronically “bid” on the cooling capacity based on price and desired occupant
+comfort levels.
+
+Under this approach, the AHU or other controllable loads respond to a price-temperature curve that essentially
+relates the current energy price to the predetermined comfort expectations of building occupants.
+The curve influences AHUs to either reduce power load to balance cost and comfort objectives,
+or in cases of abundant, economical electricity, perhaps increase consumption to perform tasks in advance,
+such as pre-cooling a building."
+
 
 ## AHU Agent Configuration
 
@@ -83,12 +98,14 @@ https://volttron.readthedocs.io/en/develop/introduction/platform-install.html
 Install and start the AHU Agent using the script install-agent.py as describe below:
 
 ```
-python scripts/install-agent.py -s <top most folder of the agent> 
+python VOLTTRON_ROOT/scripts/install-agent.py -s <top most folder of the agent> 
                                 -c <Agent config file>
                                 -i agent.AHU
                                 -t AHU
                                 --start --force
 ```
+, where VOLTTRON_ROOT is the root of the source directory of VOLTTRON.
+
 -s : followed by path of top most folder of the AHU agent
 
 -c : followed by path of the agent config file
@@ -99,6 +116,5 @@ python scripts/install-agent.py -s <top most folder of the agent>
  
 --start (optional): start after installation
 
---force (optional): overwrites existing ilc agent with identity "agent.AHU"  
-
+--force (optional): overwrites existing ilc agent with identity "agent.AHU" 
 

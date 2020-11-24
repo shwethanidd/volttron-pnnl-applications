@@ -21,7 +21,10 @@ In activated VOLTTRON environment, install all the ProactiveDiagnostic dependent
 cd EnergyEfficiency/ProactiveDiagnosticAgent
 pip install -r requirements.txt
 ```
-For this agent you will require two config files; 1. Agent config file, and 2. Diagnosis config file
+For this agent you will require two config files-
+ 
+ 1. Agent config file, and
+ 2. Diagnosis config file
 
 The json format of the config files are specified below. 
 
@@ -32,9 +35,6 @@ The json format of the config files are specified below.
     "campus": "campus",
     "building": "building",
     "device": ["AHU1"],
-    # all diagnostics in diagnostics array are run consecutively.
-    # this is initiated based on a cron scheduling string - https://crontab.guru
-    # example - "0 18 * * *" is every day at 6pm
     "run_schedule": "*/3 * * * *",
     "prerequisites": {
         "conditions": ["Abs(OutdoorAirTemperature - ReturnAirTemperature)>5.0", "OutdoorAirTemperature>35.0"],
@@ -45,8 +45,22 @@ The json format of the config files are specified below.
     ]
 }
 ````
+All diagnostics in diagnostics array are run consecutively.
+This is initiated based on a cron scheduling string - https://crontab.guru
+Example - "0 18 * * *" is every day at 6pm
 
 *  Diagnosis Config File:
+
+There are two types of fault conditions -
+1. all: if all conditions are "true" in the rules list, then only proactive agent sends fault code. 
+Otherwise, it sends non fault code.
+2. any: if atleast one of the conditions is true in the list, then it sends fault code.
+Otherwise it sends non fault code. 
+
+steady_state_interval: Time in seconds after control action to wait for steady state prior to performing analysis
+
+data_collection_interval: Time in seconds after proactive diagnostic
+            # application will perform get_point 10 times evenly space over collection interval
 
 
 ```json
@@ -55,11 +69,6 @@ The json format of the config files are specified below.
     "fault_code": 1,
     "non_fault_code": 0,
     "fault_condition": "all", 
-    # There are two types of fault conditions
-    # 1. all: if all conditions are "true" in the rules list, then only proactive agent sends fault code.
-    # Otherwise, it sends non fault code.
-    # 2. any: if atleast one of the conditions is true in the list, then it sends fault code.
-    # Otherwisem it sends non fault code. 
     "control": [
         {
             "points": {
@@ -70,11 +79,7 @@ The json format of the config files are specified below.
                 "OccupancySchedule": 1,
                 "SupplyFanStatusCommand": 1
             },
-            # Time in seconds after control action to wait for steady
-            # state prior to performing analysis
             "steady_state_interval": 20,
-            # data collection interval in seconds after proactive diagnostic
-            # application will perform get_point 10 times evenly space over collection interval
             "data_collection_interval": 20,
             "analysis": {
             
@@ -111,12 +116,14 @@ https://volttron.readthedocs.io/en/develop/introduction/platform-install.html
 Install and start the ProactiveDiagnostic Agent using the script install-agent.py as describe below:
 
 ```
-python scripts/install-agent.py -s <top most folder of the agent> 
+python VOLTTRON_ROOT/scripts/install-agent.py -s <top most folder of the agent> 
                                 -c <Agent config file>
                                 -i agent.proactivediagnostic
                                 -t proactivediagnostic
                                 --start --force
 ```
+, where VOLTTRON_ROOT is the root of the source directory of VOLTTRON.
+
 -s : followed by path of top most folder of the Proactive Diagnostic agent
 
 -c : followed by path of the agent config file
@@ -127,6 +134,6 @@ python scripts/install-agent.py -s <top most folder of the agent>
  
 --start (optional): start after installation
 
---force (optional): overwrites existing ilc agent with identity "agent.proactivediagnostic" 
+--force (optional): overwrites existing proactivediagnostics agent with identity "agent.proactivediagnostic" 
 
 

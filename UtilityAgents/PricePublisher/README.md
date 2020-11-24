@@ -19,6 +19,7 @@ Agent config file:
 cron_schedule: '*/5 * * * *'
 price_file: /home/vuzer/transactivecontrol/MarketAgents/config/RTP/RTP-sept.csv
 ````
+
 ## Install and activate volttron environment
 Refer following volttron readthedocs for Installing, starting and activating volttron environment: 
 https://volttron.readthedocs.io/en/develop/introduction/platform-install.html
@@ -27,12 +28,14 @@ https://volttron.readthedocs.io/en/develop/introduction/platform-install.html
 Install and start the PricePublisher Agent using the script install-agent.py as describe below:
 
 ```
-python scripts/install-agent.py -s <top most folder of the agent> 
+python VOLTTRON_ROOT/scripts/install-agent.py -s <top most folder of the agent> 
                                 -c <Agent config file>
                                 -i agent.PricePublisher
                                 -t PricePublisher
                                 --start --force
 ```
+, where VOLTTRON_ROOT is the root of the source directory of VOLTTRON.
+
 -s : followed by path of top most folder of the PricePublisher agent
 
 -c : followed by path of the agent config file

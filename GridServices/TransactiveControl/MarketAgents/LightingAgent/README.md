@@ -1,7 +1,11 @@
 # Lighting Agent
 
 Transactive controls and coordination (TCC) agent that interacts with volttron market service
- as a consumer electricity. This agent represents light devices that provide lighting to building zones. 
+ as a consumer of electricity. This agent represents light devices that provide lighting to building zones.
+
+Note :
+Please provide info about what (quantity?) the agent bids to the electricity market and how does it control
+ the devices based on the negotiated price. 
 
 ## Lighting Agent Configuration
 
@@ -110,12 +114,14 @@ https://volttron.readthedocs.io/en/develop/introduction/platform-install.html
 Install and start the Lighting Agent using the script install-agent.py as describe below:
 
 ```
-python scripts/install-agent.py -s <top most folder of the agent> 
+python VOLTTRON_ROOT/scripts/install-agent.py -s <top most folder of the agent> 
                                 -c <Agent config file>
                                 -i agent.Lighting
                                 -t Lighting
                                 --start --force
 ```
+, where VOLTTRON_ROOT is the root of the source directory of VOLTTRON.
+
 -s : followed by path of top most folder of the Lighting agent
 
 -c : followed by path of the agent config file

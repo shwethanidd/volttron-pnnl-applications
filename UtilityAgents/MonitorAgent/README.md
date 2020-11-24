@@ -57,12 +57,14 @@ https://github.com/VOLTTRON/volttron/blob/main/services/ops/EmailerAgent/README.
 Install and start the Monitor Agent using the script install-agent.py as describe below:
 
 ```
-python scripts/install-agent.py -s <top most folder of the agent> 
+python VOLTTRON_ROOT/scripts/install-agent.py -s <top most folder of the agent> 
                                 -c <Agent config file>
                                 -i agent.Monitor
                                 -t Monitor
                                 --start --force
 ```
+, where VOLTTRON_ROOT is the root of the source directory of VOLTTRON.
+
 -s : followed by path of top most folder of the Monitor agent
 
 -c : followed by path of the agent config file

@@ -66,3 +66,79 @@ This work is under way and consists of the following:
 2. Forecasting the hourly average flexibility of each controllable load for the next 24-hour period (i.e., an hourly average value for maximum and minimum consumptions for each controllable load) based on historical data and current weather conditions.
 
 3. The methodology for accomplishing this is in progress and this feature should be incorporated in software tested for the June milestone.
+
+## Example of running Transactive control agents all together in simulation mode:
+
+Swetha's Notes: TCC agents need more description. 
+I think we need to also provide info on how to run them all together in simulation mode. 
+This would contain market service, TNS campus, city agents, eplus etc.
+
+Run Market-Service agent
+
+
+````
+python ./scripts/install-agent.py \
+    -s services/core/MarketServiceAgent \
+    -i platform.market \
+    --config transactivecontrol/MarketAgents/config/BRSW/market-service-config \
+    --tag market-service \
+    --start \
+    --force
+````
+
+Install and Run Energy Plus:
+This is an example demonstrates how to run with EnergyPlus simulation, run building model simulations with EnergyPlus,
+send/receive messages back and forth between VOLTTRON and EnergyPlus simulation.
+
+
+````
+python ./scripts/install-agent.py \
+    -s volttron/pnnl/energyplusagent \
+    -i platform.actuator \
+    --tag eplus \
+    --config transactivecontrol/MarketAgents/config/BRSW/ep_BRSW2.config \
+    --start \
+    --force
+````
+
+For more information about EnergyPlus, please refer to https://www.energyplus.net/sites/default/files/docs/site_v8.3.0/GettingStarted/GettingStarted/index.html.
+Technical documentation about the simulation framework can be found at 
+https://volttron.readthedocs.io/en/develop/developing-volttron/integrating-simulations/index.html
+
+Run price publisher:
+
+````
+python scripts/install-agent.py \
+    -s transactivecontrol/MarketAgents/PricePublisher \
+    --config  transactivecontrol/MarketAgents/config/BRSW/price_pub.config \
+    --tag price_pub \
+    -i price_pub \
+    --force \
+    --start
+
+````
+Run TCC agents:
+
+Install and start the AHU Agent using the script install-agent.py as describe below:
+
+```
+python VOLTTRON_ROOT/scripts/install-agent.py -s <top most folder of the agent> 
+                                -c <Agent config file>
+                                -i agent.AHU
+                                -t AHU
+                                --start --force
+```
+, where VOLTTRON_ROOT is the root of the source directory of VOLTTRON.
+
+-s : followed by path of top most folder of the AHU agent
+
+-c : followed by path of the agent config file
+
+-i : followed by agent identity
+
+-t : followed by name tag
+ 
+--start (optional): start after installation
+
+--force (optional): overwrites existing ilc agent with identity "agent.AHU" 
+

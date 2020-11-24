@@ -9,8 +9,13 @@ qualitative rules (type of zone).
 
 ## ILC Agent Configuration
 
-For ILC agent, you will require four config files; 1. ILC (main) config 2. Control config file, 3. criteria config file
- , and 4. pairwise_criteria_file. The json format of the config files are specified below.
+For ILC agent, you will require four config files -
+ 1. ILC (main) config
+ 2. Control config file
+ 3. criteria config file, and
+ 4. pairwise_criteria_file.
+
+The json format of the config files are specified below.
 In control and criteria files contains both curtail setting and augment settings.
  
 These config files can be created using the config-web-tool: https://ilc-configuration-tool.web.app/.
@@ -120,8 +125,15 @@ file using the config-web-tool
 * Criteria Config file:
 
 In this config file, any number of relevant criteria can be define to prioritize loads for curtail or augment
-the electricity consumption. In the following example, five criteria are used; 1. Zonetemperature-setpoint 2. rated-power, 3. room-type, 4. stage, 5. history-zonetemperature. This criterial differentiate by their 
- operation types  
+the electricity consumption. In the following example, five criteria are used;
+ 1. Zonetemperature-setpoint,
+ 2. rated-power,
+ 3. room-type,
+ 4. stage,
+ 5. history-zonetemperature.
+ 
+This criteria differentiate by their operation types
+   
 ````json
 {
     "HP1": {
@@ -277,7 +289,7 @@ according to a numerical scale from 1 to 9. The higher the value, the more impor
 comparison is conducted to determine qualitatively which criteria are more important and assign to each
 criterion a qualitative weight.
 
-for more detail about pair-wise criteria, please refer following documentation
+For more detail about pair-wise criteria, please refer section 2.0 of the following documentation:
 https://www.pnnl.gov/main/publications/external/technical_reports/PNNL-26034.pdf
 
 ```json
@@ -331,15 +343,24 @@ https://www.pnnl.gov/main/publications/external/technical_reports/PNNL-26034.pdf
 For installing, starting, and activating the VOLTTRON environment, refer to the following VOLTTRON readthedocs: 
 https://volttron.readthedocs.io/en/develop/introduction/platform-install.html
 
+## Install ILC config file using VOLTTRON config store
+
+```
+vctl cofig store agent.ILC config <path of config store>
+
+```
+
 ## Installing and Running ILC Agent
 Install and start the ILC Agent using the script install-agent.py as describe below:
 ```
-python scripts/install-agent.py -s <top most folder of the agent> 
+python VOLTTRON_ROOT/scripts/install-agent.py -s <top most folder of the agent> 
                                 -c <Agent config file>
                                 -i agent.ILC
                                 -t ILC
                                 --start --force
 ```
+, where VOLTTRON_ROOT is the root of the source directory of VOLTTRON.
+
 -s : followed by path of top most folder of the ILC agent
 
 -c : followed by path of the main config file
