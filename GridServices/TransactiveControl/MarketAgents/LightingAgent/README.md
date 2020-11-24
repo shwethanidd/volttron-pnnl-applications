@@ -1,7 +1,7 @@
 # Lighting Agent
 
 Transactive controls and coordination (TCC) agent that interacts with volttron market service
- as a consumer electricity. This agent represents light devices that provide lighting to building zones. 
+ as a consumer of electricity. This agent represents light devices that provide lighting to building zones. 
 
 ## Lighting Agent Configuration
 
