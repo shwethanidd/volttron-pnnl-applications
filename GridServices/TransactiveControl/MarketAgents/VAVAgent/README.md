@@ -218,12 +218,14 @@ https://volttron.readthedocs.io/en/develop/introduction/platform-install.html
 Install and start the VAV Agent using the script install-agent.py as describe below:
 
 ```
-python scripts/install-agent.py -s <top most folder of the agent> 
+python VOLTTRON_ROOT/scripts/install-agent.py -s <top most folder of the agent> 
                                 -c <Agent config file>
                                 -i agent.VAV
                                 -t VAV
                                 --start --force
 ```
+, where VOLTTRON_ROOT is the root of the source directory of VOLTTRON.
+
 -s : followed by path of top most folder of the VAV agent
 
 -c : followed by path of the agent config file
