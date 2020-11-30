@@ -343,12 +343,16 @@ https://www.pnnl.gov/main/publications/external/technical_reports/PNNL-26034.pdf
 For installing, starting, and activating the VOLTTRON environment, refer to the following VOLTTRON readthedocs: 
 https://volttron.readthedocs.io/en/develop/introduction/platform-install.html
 
-## Install ILC config file using VOLTTRON config store
+## Install ILC config file using VOLTTRON config store:
+
+To store ILC configuration files in the Configuration Store use the following store sub-command: 
 
 ```
-vctl cofig store agent.ILC config <path of config store>
+vctl cofig store agent.ILC <config name> <path of config file>
 
 ```
+Other sub-commands of "config store command-line" tool can be found here: 
+https://volttron.readthedocs.io/en/develop/platform-features/config-store/commandline-interface.html
 
 ## Installing and Running ILC Agent
 Install and start the ILC Agent using the script install-agent.py as describe below:
