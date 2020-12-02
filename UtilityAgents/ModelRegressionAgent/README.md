@@ -11,9 +11,9 @@ trained using this agent.
 
 The json format of the config files are specified below. 
 
-1.  Agent config file:
+*  Agent config file:
 
-```` json
+````
 {
     "campus": "",
     "building": "",
@@ -98,6 +98,7 @@ The json format of the config files are specified below.
 }
 
 ````
+
 ## Install and activate VOLTTRON environment
 For installing, starting, and activating the VOLTTRON environment, refer to the following VOLTTRON readthedocs: 
 https://volttron.readthedocs.io/en/develop/introduction/platform-install.html

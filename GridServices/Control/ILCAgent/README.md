@@ -24,7 +24,7 @@ file using the config-web-tool
 
 *  ILC config file:
 
-```` json
+````
 {
     "campus": "CAMPUS",
     "building": "BUILDING",
@@ -58,7 +58,7 @@ file using the config-web-tool
 
 * Control config file:  
 
-````json
+````
 {
     "HP1": {
         "FirstStageCooling": {
@@ -134,7 +134,7 @@ the electricity consumption. In the following example, five criteria are used;
  
 This criteria differentiate by their operation types
    
-````json
+````
 {
     "HP1": {
         "FirstStageCooling": {
@@ -292,7 +292,7 @@ criterion a qualitative weight.
 For more detail about pair-wise criteria, please refer section 2.0 of the following documentation:
 https://www.pnnl.gov/main/publications/external/technical_reports/PNNL-26034.pdf
 
-```json
+```
 {
     "curtail": {
         "history-zonetemperature": {

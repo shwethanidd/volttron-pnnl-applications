@@ -12,7 +12,7 @@ The json format of the config files are specified below.
 
 Agent config file:
 
-```` json
+````
 {   "email_list": ["user.name@gmail.com"],
     "rules": 
     [
@@ -42,6 +42,7 @@ Agent config file:
     ]
 }
 ````
+
 ## Install and activate VOLTTRON environment
 For installing, starting, and activating the VOLTTRON environment, refer to the following VOLTTRON readthedocs: 
 https://volttron.readthedocs.io/en/develop/introduction/platform-install.html

@@ -10,7 +10,7 @@ You can specify the configuration in either json or yaml format. The json format
 
 * Agent config file:
 
-```` json
+````
 {
     "campus": "PNNL", 
     "building": "350_BUILDING",
@@ -94,6 +94,7 @@ You can specify the configuration in either json or yaml format. The json format
     }
 }
 ````
+
 User can create a config file using the tcc-config-web-tool: https://tcc-configuration-tool.web.app/
 and follow instructions from the tcc-userguide https://tcc-userguide.readthedocs.io/en/latest/
 

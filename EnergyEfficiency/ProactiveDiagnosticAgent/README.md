@@ -30,7 +30,7 @@ The json format of the config files are specified below.
 
 *  Agent config file:
 
-```` json
+````
 {
     "campus": "campus",
     "building": "building",
@@ -45,6 +45,7 @@ The json format of the config files are specified below.
     ]
 }
 ````
+
 All diagnostics in diagnostics array are run consecutively.
 This is initiated based on a cron scheduling string - https://crontab.guru
 Example - "0 18 * * *" is every day at 6pm

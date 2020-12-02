@@ -9,7 +9,7 @@ The json format of the config files are specified below.
 
 1.  Agent config file:
 
-```` json
+````
 "topic": "topic_name"
 "value" : 0
 ````

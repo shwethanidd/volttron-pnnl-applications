@@ -1,22 +1,15 @@
 # AHU Agent
 
-Transactive controls and coordination (TCC) agent that interacts with volttron market service
-as a consumer of electricity and a supplier of cooling air to VAV TCC agent. 
-This agent represent VAV hardware devices that provide cooling to building zones
- 
-Swetha's Note: Please explain what does AHU bid in the electricity market. 
-And after the market is cleared how does AHU control the devices.
- 
-An air handling unit (AHU) that provides air conditioning would obtain electricity at a certain
-cost directly from the energy market and then sell its product—cool air—to zones within the building.
-The zones electronically “bid” on the cooling capacity based on price and desired occupant
-comfort levels.
+The AHU Transactive controls and coordination (TCC) agent interacts with volttron market service
+as a consumer of electricity and a supplier of cooling air to VAV-TCC-agent or zones within the building.
+The zones/VAV agent electronically “bid” on the cooling capacity based on price and desired occupant
+comfort level.
 
 Under this approach, the AHU or other controllable loads respond to a price-temperature curve that essentially
 relates the current energy price to the predetermined comfort expectations of building occupants.
 The curve influences AHUs to either reduce power load to balance cost and comfort objectives,
 or in cases of abundant, economical electricity, perhaps increase consumption to perform tasks in advance,
-such as pre-cooling a building."
+such as pre-cooling a building.
 
 
 ## AHU Agent Configuration
@@ -25,7 +18,7 @@ You can specify the configuration in either json or yaml format. The json format
 
 * Agent config file:
 
-```` json
+````
 {
     "campus": "CAMPUS", # if omitted defaults to ""
     "building": "BUILDING", # if omitted defaults to ""
@@ -87,6 +80,7 @@ You can specify the configuration in either json or yaml format. The json format
     }
 }
 ````
+
 User can create a config file using the tcc-config-web-tool: https://tcc-configuration-tool.web.app/
 and follow instructions from the tcc-userguide https://tcc-userguide.readthedocs.io/en/latest/
 

@@ -1,19 +1,17 @@
 # Lighting Agent
 
-Transactive controls and coordination (TCC) agent that interacts with volttron market service
- as a consumer of electricity. This agent represents light devices that provide lighting to building zones.
-
-Note :
-Please provide info about what (quantity?) the agent bids to the electricity market and how does it control
- the devices based on the negotiated price. 
-
+The Lighting Transactive controls and coordination (TCC) agent interacts with volttron market service
+ as a consumer of electricity.  This agent represents light devices that provide lighting to building zones.
+The Lighting-TCC agent electronically “bid” on the cooling capacity 
+based on price and desired occupant comfort level. 
+ 
 ## Lighting Agent Configuration
 
 You can specify the configuration in either json or yaml format. The json format is specified below:
 
 * Agent Config file 
 
-```` json
+````
 {
     "campus": "CAMPUS", 
     "building": "BUILDING1",
@@ -103,6 +101,7 @@ You can specify the configuration in either json or yaml format. The json format
     }
 }
 ````
+
 User can create a config file using the tcc-config-web-tool: https://tcc-configuration-tool.web.app/
 and follow instructions from the tcc-userguide https://tcc-userguide.readthedocs.io/en/latest/
 

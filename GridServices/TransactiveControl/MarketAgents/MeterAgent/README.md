@@ -6,7 +6,8 @@ The meter agent provides either a fixed price or fixed demand supply curve to th
 You can specify the configuration in either json or yaml format. The json format is specified below:
 
 * Agent config file:
-```` json
+
+```` 
 {
     "campus": "PNNL", # if omitted defaults to ""
     "building": "BRSW", # if omitted defaults to ""

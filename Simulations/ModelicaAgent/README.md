@@ -18,7 +18,7 @@ User can specify the configuration in either json or yaml format. The json forma
 
 * Agent config file:
 
-```` json
+```` 
 {
     "model": "IBPSA.Utilities.IO.RESTClient.Examples.PIDTest",
     "model_runtime": 361,
@@ -54,6 +54,7 @@ User can specify the configuration in either json or yaml format. The json forma
         }
 }          
 ````
+
 ## Install and activate VOLTTRON environment
 For installing, starting, and activating the VOLTTRON environment,
 refer to the following VOLTTRON readthedocs:
