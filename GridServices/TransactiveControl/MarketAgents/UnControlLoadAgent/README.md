@@ -11,7 +11,7 @@ You can specify the configuration in either json or yaml format. The json format
 
 * Agent config file:
 
-```` json
+````
 {
 	"market_name": "electric",
 	"campus": "PNNL",
