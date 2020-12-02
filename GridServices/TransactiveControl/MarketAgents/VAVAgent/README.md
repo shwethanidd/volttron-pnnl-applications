@@ -10,7 +10,7 @@ You can specify the configuration in either json or yaml format. The json format
 
 * Agent config file:
 
-```` json
+````
 {
     "campus": "PNNL", 
     "building": "3860_BUILDING", 
