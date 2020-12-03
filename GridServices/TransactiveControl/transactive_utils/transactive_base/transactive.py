@@ -4,9 +4,13 @@ from datetime import timedelta as td
 import numpy as np
 
 from dateutil.parser import parse
+from datetime import datetime as dt
 import dateutil.tz
 import gevent
-
+from collections import OrderedDict
+from volttron.pnnl.transactive_base.transactive.markets import DayAheadMarket
+from volttron.pnnl.transactive_base.transactive.markets import RealTimeMarket
+from volttron.pnnl.transactive_base.transactive.utils import calculate_hour_of_year, lists_to_dict
 from volttron.platform.agent.math_utils import mean, stdev
 from volttron.platform.agent.base_market_agent import MarketAgent
 from volttron.platform.agent.base_market_agent.poly_line import PolyLine
@@ -18,11 +22,10 @@ from volttron.platform.messaging import topics, headers as headers_mod
 from volttron.platform.jsonrpc import RemoteError
 from volttron.platform.vip.agent import errors
 
-from transactive_utils.models import Model
-
+from volttron.pnnl.models import Model
 _log = logging.getLogger(__name__)
 setup_logging()
-__version__ = '0.3'
+__version__ = '0.4'
 
 
 class TransactiveBase(MarketAgent, Model):
@@ -58,12 +61,10 @@ class TransactiveBase(MarketAgent, Model):
         self.flexibility = None
         self.ct_flexibility = None
         self.off_setpoint = None
-        self.demand_limiting = False
         self.occupied = False
         self.mapped = None
-        self.market_prices = {}
-        self.day_ahead_prices = []
-        self.last_24_hour_prices = []
+        self.cleared_prices = []
+        self.price_info = []
         self.input_topics = set()
 
         self.commodity = "electricity"
@@ -74,13 +75,16 @@ class TransactiveBase(MarketAgent, Model):
         self.default_min_price = 0.01
         self.default_max_price = 0.1
         self.market_list = []
+        self.market_manager_list = []
         self.market_type = None
+        self.day_ahead_market = None
+        self.rtp_market = None
+        self.oat_predictions = {}
 
         # Variables declared in configure_main
         self.record_topic = None
         self.market_number = None
         self.single_market_contol_interval = None
-        self.hour_prediction_offset = 1
         self.inputs = {}
         self.outputs = {}
         self.schedule = {}
@@ -89,36 +93,35 @@ class TransactiveBase(MarketAgent, Model):
         self.input_data_tz = None
         self.actuation_rate = None
         self.actuate_topic = None
-        self.price_multiplier = None
-        self.static_price_flag = False
-        self.prediction_error = 1.0
-        self.default_min_price = 0.01
-        self.default_max_price = 0.1
-        self.oat_predictions = []
+        self.price_manager = None
         if config:
             default_config.update(config)
             self.default_config = default_config
         else:
             self.default_config = default_config
-        self.vip.config.set_default("config", self.default_config)
-        self.vip.config.subscribe(self.configure_main,
-                                  actions=["NEW", "UPDATE"],
-                                  pattern="config")
+        if self.aggregator is None:
+            self.vip.config.set_default("config", self.default_config)
+            self.vip.config.subscribe(self.configure_main,
+                                      actions=["NEW", "UPDATE"],
+                                      pattern="config")
 
     def configure_main(self, config_name, action, contents, **kwargs):
         config = self.default_config.copy()
         config.update(contents)
         _log.debug("Update agent %s configuration -- config --  %s", self.core.identity, config)
         if action == "NEW" or "UPDATE":
+            price_multiplier = config.get("price_multiplier", 1.0)
+            self.price_manager = MessageManager(self, price_multiplier)
+
             campus = config.get("campus", "")
             building = config.get("building", "")
             device = config.get("device", "")
             subdevice = config.get("subdevice", "")
-            self.demand_limiting = config.get("demand_limiting", False)
 
             base_record_list = ["tnc", campus, building, device, subdevice]
             base_record_list = list(filter(lambda a: a != "", base_record_list))
             self.record_topic = '/'.join(base_record_list)
+
             self.actuate_onstart = config.get("actuation_enabled_onstart", True)
             self.actuation_disabled = True if not self.actuate_onstart else False
             self.actuation_method = config.get("actuation_method")
@@ -129,7 +132,7 @@ class TransactiveBase(MarketAgent, Model):
                 self.actuate_topic = '/'.join(base_record_list)
             else:
                 self.actuate_topic = actuate_topic
-            self.price_multiplier = config.get("price_multiplier", 1.0)
+
             input_data_tz = config.get("input_data_timezone")
             self.input_data_tz = dateutil.tz.gettz(input_data_tz)
             inputs = config.get("inputs", [])
@@ -142,9 +145,6 @@ class TransactiveBase(MarketAgent, Model):
             self.init_outputs(outputs)
             self.init_actuation_state(self.actuate_topic, self.actuate_onstart)
             self.init_input_subscriptions()
-            self.static_price_flag = config.get('static_price_flag', False)
-            self.default_min_price = config.get('static_minimum_price', 0.01)
-            self.default_max_price = config.get('static_maximum_price', 0.1)
             market_name = config.get("market_name", "electric")
             self.market_type = config.get("market_type", "tns")
             tns = False if self.market_type != "tns" else True
@@ -159,19 +159,21 @@ class TransactiveBase(MarketAgent, Model):
             model_config = config.get("model_parameters", {})
             Model.__init__(self, model_config, **kwargs)
             if not self.market_list and tns is not None and self.model is not None:
-                if tns:
-                    self.market_number = 24
-                    self.single_market_contol_interval = None
-                else:
-                    self.hour_prediction_offset = 0
-                    self.market_number = 1
-                    self.single_market_contol_interval = config.get("single_market_control_interval", 15)
-                for i in range(self.market_number):
-                    self.market_list.append('_'.join([market_name, str(i)]))
                 if self.aggregator is None:
                     _log.debug("%s is a transactive agent.", self.core.identity)
-                    self.init_markets()
-            self.setup()
+                    for i in range(24):
+                        self.market_list.append('_'.join([market_name, str(i)]))
+                    if tns:
+                        rtp_market_list = ["_".join(["refinement", market_name])]
+                        self.day_ahead_market = DayAheadMarket(self.outputs, self.market_list, self, self.price_manager)
+                        self.rtp_market = RealTimeMarket(self.outputs, rtp_market_list, self, self.price_manager)
+                        self.market_manager_list = [self.day_ahead_market, self.rtp_market]
+                    else:
+                        market_list = ["_".join(["refinement", market_name])]
+                        self.rtp_market = RealTimeMarket(self.outputs, market_list, self, self.price_manager)
+                        self.single_market_contol_interval = config.get("single_market_control_interval", 15)
+                        self.market_manager_list = [self.rtp_market]
+                    self.setup()
 
     def setup(self, **kwargs):
         """
@@ -180,43 +182,24 @@ class TransactiveBase(MarketAgent, Model):
         :param kwargs:
         :return:
         """
+        for market in self.market_manager_list:
+            market.init_markets()
+
         if self.market_type == "rtp":
-            self.update_prices = self.update_rtp_prices
+            self.update_prices = self.price_manager.update_rtp_prices
         else:
-            self.update_prices = self.update_tns_prices
+            self.update_prices = self.price_manager.update_prices
+
         self.vip.pubsub.subscribe(peer='pubsub',
                                   prefix='mixmarket/start_new_cycle',
                                   callback=self.update_prices)
         self.vip.pubsub.subscribe(peer='pubsub',
+                                  prefix='tnc/cleared_prices',
+                                  callback=self.price_manager.update_cleared_prices)
+        self.vip.pubsub.subscribe(peer='pubsub',
                                   prefix="/".join([self.record_topic,
                                                    "update_model"]),
                                   callback=self.update_model)
-
-    @Core.receiver("onstop")
-    def shutdown(self, sender, **kwargs):
-        _log.debug("Shutting down %s", self.core.identity)
-        if self.outputs and self.actuation_enabled:
-            for output_info in list(self.outputs.values()):
-                topic = output_info["topic"]
-                release = output_info["release"]
-                actuator = output_info["actuator"]
-                if self.actuation_obj is not None:
-                    self.actuation_obj.kill()
-                    self.actuation_obj = None
-                self.actuate(topic, release, actuator)
-
-    def init_markets(self):
-        """
-        Join markets.  For TNS will join 24 market or 1 market
-        for real-time price scenario.
-        :return: None
-        """
-        for market in self.market_list:
-            _log.debug("Join market: %s  --  %s", self.core.identity, market)
-            self.join_market(market, BUYER, None, self.offer_callback,
-                             None, self.price_callback, self.error_callback)
-            self.update_flag.append(False)
-            self.demand_curve.append(PolyLine())
 
     def init_inputs(self, inputs):
         for input_info in inputs:
@@ -375,19 +358,6 @@ class TransactiveBase(MarketAgent, Model):
             if self.actuation_enabled:
                 self.update_actuation_state(None, None, None, None, None, False)
 
-    def check_future_schedule(self, dt):
-        current_schedule = self.schedule[dt.weekday()]
-        if "always_on" in current_schedule:
-            return True
-        if "always_off" in current_schedule:
-            return False
-        _start = current_schedule["start"]
-        _end = current_schedule["end"]
-        if _start < dt.time() < _end:
-            return True
-        else:
-            return False
-
     def update_actuation_state(self, peer, sender, bus, topic, headers, message):
         state = message
         if sender is not None:
@@ -430,18 +400,13 @@ class TransactiveBase(MarketAgent, Model):
         self.actuation_enabled = state
 
     def update_outputs(self, name, price):
-        _log.debug("update_outputs: %s - current_price: %s", self.core.identity, self.current_price)
+        _log.debug("update_outputs: %s", self.core.identity)
         if price is None:
-            if self.current_price is None:
+            price = self.price_manager.get_current_cleared_price(self.get_current_datetime())
+            if price is None:
                 return
-            price = self.current_price
         sets = self.outputs[name]["ct_flex"]
-        if self.actuation_price_range is not None:
-            prices = self.actuation_price_range
-        else:
-            prices = self.determine_prices()
-        if self.demand_limiting:
-            price = max(np.mean(prices), price)
+        prices = self.price_manager.get_price_array(self.get_current_datetime())
         _log.debug("Call determine_control: %s", self.core.identity)
         value = self.determine_control(sets, prices, price)
         self.outputs[name]["value"] = value
@@ -462,6 +427,7 @@ class TransactiveBase(MarketAgent, Model):
             actuator = output_info["actuator"]
             value = output_info.get("value")
             offset = output_info["offset"]
+            _log.debug("ACTUATE: %s -- %s", self.occupied, value)
             if value is not None and self.occupied:
                 value = value + offset
                 self.actuate(topic, value, actuator)
@@ -475,162 +441,6 @@ class TransactiveBase(MarketAgent, Model):
                               value).get(timeout=15)
         except (RemoteError, gevent.Timeout, errors.VIPError) as ex:
             _log.warning("Failed to set %s - ex: %s", point_topic, str(ex))
-
-    def offer_callback(self, timestamp, market_name, buyer_seller):
-        for name, output in self.outputs.items():
-            output_info = output
-            self.mapped = name
-            if output["condition"]:
-                break
-        self.flexibility = output_info["flex"]
-        self.ct_flexibility = output_info["ct_flex"]
-        self.off_setpoint = output_info["off_setpoint"]
-        market_index = self.market_list.index(market_name)
-        if market_index > 0:
-            while not self.update_flag[market_index - 1]:
-                gevent.sleep(1)
-        if market_index == len(self.market_list) - 1:
-            self.update_flag = [False]*len(self.market_list)
-        if market_index == 0 and self.current_datetime is not None:
-            self.init_predictions(output_info)
-
-        schedule_index = self.determine_schedule_index(market_index)
-        market_time = self.current_datetime + td(hours=market_index + self.hour_prediction_offset)
-        if self.schedule:
-            occupied = self.check_future_schedule(market_time)
-        else:
-            occupied = True
-
-        demand_curve = self.create_demand_curve(market_index,
-                                                schedule_index,
-                                                occupied)
-        self.demand_curve[market_index] = demand_curve
-        result, message = self.make_offer(market_name, buyer_seller, demand_curve)
-
-    def create_demand_curve(self, market_index, sched_index, occupied):
-        """
-        Create demand curve.  market_index (0-23) where next hour is 0
-        (or for single market 0 for next market).  sched_index (0-23) is hour
-        of day corresponding to market that demand_curve is being created.
-        :param market_index: int; current market index where 0 is the next hour.
-        :param sched_index: int; 0-23 corresponding to hour of day
-        :param occupied: bool; true if occupied
-        :return:
-        """
-        _log.debug("%s create_demand_curve - index: %s - sched: %s",
-                   self.core.identity,  market_index, sched_index)
-        demand_curve = PolyLine()
-        prices = self.determine_prices()
-        self.update_prediction_error()
-        for control, price in zip(self.ct_flexibility, prices):
-            if occupied:
-                _set = control
-            else:
-                _set = self.off_setpoint
-            q = self.get_q(_set, sched_index, market_index, occupied)
-            demand_curve.add(Point(price=price, quantity=q))
-
-        topic_suffix = "DemandCurve"
-        message = {
-            "MarketIndex": market_index,
-            "Curve": demand_curve.tuppleize(),
-            "Commodity": self.commodity
-        }
-        _log.debug("%s debug demand_curve - curve: %s",
-                   self.core.identity, demand_curve.points)
-        self.publish_record(topic_suffix, message)
-        return demand_curve
-
-    def price_callback(self, timestamp, market_name, buyer_seller, price, quantity):
-        market_index = self.market_list.index(market_name)
-        if price is None:
-            if self.market_prices:
-                try:
-                    price = self.market_prices[market_index]
-                    _log.warning("%s - market %s did not clear, "
-                                 "using market_prices!",
-                                 self.core.identity, market_name)
-                except IndexError:
-                    _log.warning("%s - market %s did not clear, and exception "
-                                 "was raised when accessing market_prices!",
-                                 self.core.identity, market_name)
-            else:
-                _log.warning("%s - market %s did not clear, "
-                             "and no market_prices!",
-                             self.core.identity, market_name)
-        if self.demand_curve and self.demand_curve[market_index].points:
-            cleared_quantity = self.demand_curve[market_index].x(price)
-        else:
-            cleared_quantity = "None"
-
-        schedule_index = self.determine_schedule_index(market_index)
-        _log.debug("%s price callback market: %s, price: %s, quantity: %s",
-                   self.core.identity, market_name, price, quantity)
-        topic_suffix = "MarketClear"
-        message = {
-            "MarketIndex": market_index,
-            "Price": price,
-            "Quantity": [quantity, cleared_quantity],
-            "Commodity": self.commodity
-        }
-        self.publish_record(topic_suffix, message)
-        # If a price is known update the state of agent (in concrete
-        # implementation of transactive agent).
-        self.update_prediction(cleared_quantity)
-        if price is not None:
-            self.update_state(market_index, schedule_index, price)
-            # For single timestep market do actuation when price clears.
-            if self.actuation_method == "market_clear" and market_index == 0:
-                if self.actuation_enabled and not self.actuation_disabled:
-                    self.do_actuation(price)
-
-    def error_callback(self, timestamp, market_name, buyer_seller, error_code, error_message, aux):
-        """
-        Callback if there is a error for a market.
-        :param timestamp:
-        :param market_name: str; market error occured for.
-        :param buyer_seller: str; is participant a buyer or seller
-        :param error_code: str; error code
-        :param error_message: str; error message
-        :param aux: dict; auxillary infor for non-intersection of curves
-        :return:
-        """
-
-        _log.error("%s - error for Market: %s", self.core.identity, market_name)
-        _log.error("buyer_seller : %s - error: %s - aux: %s",
-                   buyer_seller, error_message, aux)
-
-    def update_tns_prices(self, peer, sender, bus, topic, headers, message):
-        _log.debug("Get prices prior to market start.")
-        current_hour = parse(message['Date']).hour
-
-        # Store received prices so we can use it later when doing clearing process
-        if self.day_ahead_prices:
-            self.actuation_price_range = self.determine_prices()
-            if current_hour != self.current_hour:
-                self.current_price = self.day_ahead_prices[0]
-                self.last_24_hour_prices.append(self.current_price)
-                if len(self.last_24_hour_prices) > 24:
-                    self.last_24_hour_prices.pop(0)
-                    self.market_prices = self.last_24_hour_prices
-                elif len(self.last_24_hour_prices) == 24:
-                    self.market_prices = self.last_24_hour_prices
-                else:
-                    self.market_prices = message['prices']
-        else:
-            self.market_prices = message["prices"]
-
-        self.current_hour = current_hour
-        self.oat_predictions = []
-        oat_predictions = message.get("temp", [])
-        self.oat_predictions = oat_predictions
-        self.day_ahead_prices = message['prices']  # Array of prices
-
-    def update_rtp_prices(self, peer, sender, bus, topic, headers, message):
-        hour = float(message['hour'])
-        self.market_prices = message["prices"]
-        _log.debug("Get RTP Prices: {}".format(self.market_prices))
-        self.current_price = self.market_prices[-1]
 
     def determine_control(self, sets, prices, price):
         """
@@ -649,30 +459,10 @@ class TransactiveBase(MarketAgent, Model):
         control = self.clamp(control, min(self.ct_flexibility), max(self.ct_flexibility))
         return control
 
-    def determine_prices(self):
-        """
-        Determine minimum and maximum price from 24-hour look ahead prices.  If the TNS
-        market architecture is not utilized, this function must be overwritten in the child class.
-        :return:
-        """
-        if self.market_prices and not self.static_price_flag:
-            avg_price = np.mean(self.market_prices)
-            std_price = np.std(self.market_prices)
-            price_min = avg_price - self.price_multiplier * std_price
-            price_max = avg_price + self.price_multiplier * std_price
-        else:
-            avg_price = None
-            std_price = None
-            price_min = self.default_min_price
-            price_max = self.default_max_price
-        _log.debug("Prices: {} - avg: {} - std: {}".format(self.market_prices, avg_price, std_price))
-        price_array = np.linspace(price_min, price_max, 11)
-        return price_array
-
     def update_input_data(self, peer, sender, bus, topic, headers, message):
         """
         Call back method for data subscription for
-        device data from MasterDriverAgent.
+        device data from MasterDriverAgent or building simulation.
         :param peer:
         :param sender:
         :param bus:
@@ -715,22 +505,6 @@ class TransactiveBase(MarketAgent, Model):
         if self.model is not None:
             self.model.update_data()
 
-    def determine_schedule_index(self, index):
-        """
-        Determine the actual hour for schedule that
-        corresponds to a market index
-        :param index: int; market_index
-        :return:
-        """
-
-        if self.current_datetime is None:
-            return index
-
-        schedule_index = index + self.current_datetime.hour + self.hour_prediction_offset
-        if schedule_index >= 24:
-            schedule_index = schedule_index - 24
-        return schedule_index
-
     def get_input_value(self, mapped):
         """
         Called by model of concrete implementation of transactive to
@@ -744,9 +518,9 @@ class TransactiveBase(MarketAgent, Model):
             return None
 
     def update_model(self, peer, sender, bus, topic, headers, message):
-        config = self.store_model_config(message)
+        coefficients = message
         if self.model is not None:
-            self.model.configure(message)
+            self.model.update_coefficients(coefficients)
 
     def clamp(self, value, x1, x2):
         min_value = min(abs(x1), abs(x2))
@@ -756,6 +530,147 @@ class TransactiveBase(MarketAgent, Model):
 
     def publish_record(self, topic_suffix, message):
         headers = {headers_mod.DATE: format_timestamp(get_aware_utc_now())}
-        message["TimeStamp"] = format_timestamp(self.current_datetime)
+        message["TimeStamp"] = format_timestamp(self.get_current_datetime())
         topic = "/".join([self.record_topic, topic_suffix])
         self.vip.pubsub.publish("pubsub", topic, headers, message).get()
+
+    def get_current_datetime(self):
+        """
+        Current datetime based on input data from
+        real building (MasterDriver) or simulation (Typically E+).
+        If no inputs are configured or no data has been ingested return
+        utc now time.
+        :return: tz aware datetime.
+        """
+        if self.current_datetime is not None:
+            return self.current_datetime
+        else:
+            return dt.now()
+
+    def get_current_output(self):
+        output_info = {}
+        mapped = ''
+        for name, output in self.outputs.items():
+            output_info = output
+            mapped = name
+            if output["condition"]:
+                break
+        return output_info, mapped
+
+    def update_market_intervals(self, intervals, correction_market):
+        if not correction_market:
+            if self.day_ahead_market is not None:
+                self.day_ahead_market.update_market_intervals(intervals)
+        else:
+            if self.rtp_market is not None:
+                self.rtp_market.update_market_intervals(intervals)
+
+
+class MessageManager(object):
+    def __init__(self, parent, price_multiplier):
+        self.market_type = "auction"
+        self.parent = parent
+        self.price_multiplier = price_multiplier
+        self.correction_market = False
+        self.cleared_prices = OrderedDict()
+        self.price_info = OrderedDict()
+        self.default_min_price = 0.035
+        self.default_max_price = 0.07
+        self.run_dayahead_market = False
+
+    def update_prices(self, peer, sender, bus, topic, headers, message):
+        raw_price_info = message["price_info"]
+        raw_initial_prices = message["prices"]
+        oat_predictions = message.get("temp", [])
+        correction_market = message.get("correction_market", False)
+        market_intervals = message.get("market_intervals")
+        _log.debug("Update prices price: {} - for interval: {}".format(raw_initial_prices, market_intervals))
+        self.parent.update_market_intervals(market_intervals, correction_market)
+        price_info = lists_to_dict(market_intervals, raw_price_info)
+        initial_prices = lists_to_dict(market_intervals, raw_initial_prices)
+        if oat_predictions:
+            self.parent.oat_predictions = lists_to_dict(market_intervals, oat_predictions)
+            _log.debug("OAT %s", self.parent.oat_predictions)
+        for market_time in market_intervals:
+            avg_price, stdev_price = price_info[market_time]
+            hour_of_year = calculate_hour_of_year(market_time)
+            price_array = self.determine_prices(avg_price, stdev_price)
+            self.price_info[hour_of_year] = price_array
+            self.cleared_prices[hour_of_year] = initial_prices[market_time]
+
+        self.correction_market = correction_market
+        if not correction_market:
+            self.run_dayahead_market = True
+        else:
+            self.run_dayahead_market = False
+
+    def update_cleared_prices(self, peer, sender, bus, topic, headers, message):
+        correction_market = message.get("correction_market", False)
+        raw_cleared_prices = message["prices"]
+        market_intervals = message.get("market_intervals")
+        _log.debug("Update cleared price: {} - for interval: {}".format(raw_cleared_prices, market_intervals))
+        self.parent.update_market_intervals(market_intervals, correction_market)
+        market_intervals = [interval for interval in market_intervals]
+        cleared_prices = lists_to_dict(market_intervals, raw_cleared_prices)
+        for market_time in market_intervals:
+            hour_of_year = calculate_hour_of_year(market_time)
+            self.cleared_prices[hour_of_year] = cleared_prices[market_time]
+        self.prune_data()
+
+    def update_rtp_prices(self, peer, sender, bus, topic, headers, message):
+        market_prices = message["prices"]
+        _log.debug("Get RTP Prices: {}".format(market_prices))
+        hour_of_year = calculate_hour_of_year(dt.now())
+        self.parent.update_market_intervals([str(dt.now())], True)
+        self.cleared_prices[hour_of_year] = market_prices[-1]
+        price_array = self.determine_prices(None, None, price_array=market_prices)
+        self.price_info[hour_of_year] = price_array
+        self.prune_data()
+
+    def determine_prices(self, avg_price, stdev_price, price_array=None):
+        """
+        Determine minimum and maximum price from 24-hour look ahead prices.  If the TNS
+        market architecture is not utilized, this function must be overwritten in the child class.
+        :return:
+        """
+        try:
+            if price_array is None:
+                price_min = avg_price - self.price_multiplier * stdev_price
+                price_max = avg_price + self.price_multiplier * stdev_price
+            else:
+                avg_price = np.mean(price_array)
+                stdev_price = np.std(price_array)
+                price_min = avg_price - self.price_multiplier * stdev_price
+                price_max = avg_price + self.price_multiplier * stdev_price
+        except:
+            avg_price = None
+            stdev_price = None
+            price_min = self.default_min_price
+            price_max = self.default_max_price
+        _log.debug("Prices: {} - avg: {} - std: {}".format(price_array, avg_price, stdev_price))
+        price_array = np.linspace(price_min, price_max, 11)
+        return price_array
+
+    def prune_data(self):
+        for k in range(len(self.cleared_prices) - 48):
+            self.cleared_prices.popitem(last=False)
+        for k in range(len(self.price_info) - 48):
+            self.price_info.popitem(last=False)
+
+    def get_current_cleared_price(self, _dt):
+        hour_of_year = calculate_hour_of_year(_dt)
+        if hour_of_year in self.cleared_prices:
+            price = self.cleared_prices[hour_of_year]
+        else:
+            _log.debug("No cleared price for current hour!")
+            price = None
+        return price
+
+    def get_price_array(self, _dt):
+        hour_of_year = calculate_hour_of_year(_dt)
+        if hour_of_year in self.price_info:
+            price_array = self.price_info[hour_of_year]
+        else:
+            _log.debug("No price array for current hour!")
+            price_array = None
+        return price_array

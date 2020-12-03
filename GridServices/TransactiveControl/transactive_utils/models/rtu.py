@@ -2,8 +2,8 @@ import logging
 import operator
 import importlib
 from volttron.platform.agent import utils
-from transactive_utils.models.utils import clamp
-import transactive_utils.models.input_names as data_names
+from volttron.pnnl.models.utils import clamp
+import volttron.pnnl.models.input_names as data_names
 
 _log = logging.getLogger(__name__)
 utils.setup_logging()
@@ -23,10 +23,10 @@ class firstorderzone(object):
         self.coefficients = {"c1", "c2", "c3", "c4"}
         self.rated_power = config["rated_power"]
 
-        self.on = [0]*24
-        self.off = [0]*24
+        self.on = [0]*parent.market_number
+        self.off = [0]*parent.market_number
 
-        self.predict_quantity = self.getQ
+        self.predict = self.getQ
         self.smc_interval = parent.single_market_contol_interval
         self.get_input_value = parent.get_input_value
 
@@ -47,8 +47,7 @@ class firstorderzone(object):
         self.mclg = self.get_input_value(self.mclg_name)
         self.mhtg = self.get_input_value(self.mhtg_name)
         self.sfs = self.get_input_value(self.sfs_name)
-        self.zt_predictions = [self.zt] * 24
-        self.configure(config)
+        self.zt_predictions = [self.zt] * parent.market_number
 
     def update_data(self):
         self.oat = self.get_input_value(self.oat_name)
@@ -71,22 +70,6 @@ class firstorderzone(object):
 
     def update(self, _set, sched_index, market_index, occupied):
         self.zt_predictions[market_index] = _set
-
-    def configure(self, config):
-        _log.debug("MODEL CONFIGURE: {}".format(config))
-        self.c1 = config.get("c1", 0)
-        self.c2 = config.get("c2", 0)
-        self.c3 = config.get("c3", 0)
-        self.c4 = config.get("c4", 0)
-        # type = config.get("terminal_box_type", "VAV")
-        # if type.lower() == "vav":
-        #     self.parent.commodity = "ZoneAirFlow"
-        #     self.predict_quantity = self.getM
-        #     self.predict_name = self.zaf_name
-        # else:
-        #     self.parent.commodity = "DischargeAirTemperature"
-        #     self.predict_quantity = self.getT
-        #     self.predict_name = self.zdat_name
 
     def predict(self, _set, sched_index, market_index, occupied):
         if self.parent.market_number == 1:
@@ -124,8 +107,6 @@ class rtuzone(object):
         self.on_min = config.get("on_min", 0)
         self.off_min = config.get("off_min", 0)
         self.tdb = config.get("temp_db", 0.5)
-        self.tdb_on = config.get("temp_on_db", self.tdb)
-        self.tdb_off = config.get("temp_off_db", self.tdb)
         self.on = [0]*parent.market_number
         self.off = [0]*parent.market_number
 
@@ -231,7 +212,7 @@ class rtuzone(object):
                 self.parent.current_datetime,
                 market_index,
                 i))
-            if ontime and off_condition(zt, off_operator(temp_stpt, self.tdb_off)) and ontime > self.on_min:
+            if ontime and off_condition(zt, off_operator(temp_stpt, self.tdb)) and ontime > self.on_min:
                 offtime = 1
                 ontime = 0
                 zt = getT(zt, oat, 0, sched_index)
@@ -240,7 +221,7 @@ class rtuzone(object):
                 ontime += 1
                 on += 1
                 zt = getT(zt, oat, 1, sched_index)
-            elif offtime and on_condition(zt, on_operator(temp_stpt, self.tdb_on)) and offtime > self.off_min:
+            elif offtime and on_condition(zt, on_operator(temp_stpt, self.tdb)) and offtime > self.off_min:
                 offtime = 0
                 ontime = 1
                 on += 1
@@ -259,7 +240,7 @@ class rtuzone(object):
             self.on[market_index+1] = ontime
             self.off[market_index+1] = offtime
             self.zt_predictions[market_index + 1] = zt
-        q = on/runtime*self.rated_power
+        q = on/60.0*self.rated_power
         # Need to think about what we are actually publishing here and
         # if we can move it out of the model
         if not dc:
