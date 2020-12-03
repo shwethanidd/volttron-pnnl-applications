@@ -1,8 +1,15 @@
 # RTU Agent
 
-Transactive control and coordination (TCC) agent that interacts with the volttron market service
+The RTU Transactive control and coordination (TCC) agent interacts with the volttron market service
 as a consumer of electricity. The agent represents a RTU/HP hardware device that provides cooling/heating to a 
- building thermal zone.  
+ building thermal zone. The RTU agent electronically “bid” on the cooling/heating capacity based on price
+ and desired occupant comfort level.
+
+Under this approach, the RTU loads respond to a price-temperature curve that essentially
+relates the current energy price to the predetermined comfort expectations of building occupants.
+The curve influences RTU to either reduce power load to balance cost and comfort objectives,
+or in cases of abundant, economical electricity, perhaps increase consumption to perform tasks in advance,
+such as pre-cooling a building.
 
 ## RTU Agent Configuration
 

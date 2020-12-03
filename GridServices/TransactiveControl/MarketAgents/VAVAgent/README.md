@@ -4,6 +4,12 @@ Transactive controls and coordination (TCC) agent that interacts with the volttr
 as a consumer of cooling/heating air that regulates cooling/heating to building zones. The AHU agent 
 is the supplier of the cooling/heating air in this transactive market.
 
+Under this approach, the VAV loads respond to a price-temperature curve that essentially
+relates the current energy price to the predetermined comfort expectations of building occupants.
+The curve influences AHUs to either reduce power load to balance cost and comfort objectives,
+or in cases of abundant, economical electricity, perhaps increase consumption to perform tasks in advance,
+such as pre-cooling a building.
+
 ## VAV Agent Configuration
 
 You can specify the configuration in either json or yaml format. The json format is specified below:

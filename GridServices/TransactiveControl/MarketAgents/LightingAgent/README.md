@@ -1,9 +1,9 @@
 # Lighting Agent
 
 The Lighting Transactive controls and coordination (TCC) agent interacts with volttron market service
- as a consumer of electricity.  This agent represents light devices that provide lighting to building zones.
-The Lighting-TCC agent electronically “bid” on the cooling capacity 
-based on price and desired occupant comfort level. 
+ as a consumer of electricity. This agent represents light devices that provide lighting to building zones.
+The Lighting-TCC agent electronically “bid” on the luminosity of zones. 
+Therefore, the price-illuminosity curve influences Lighting agent to reduce illuminosity of the zones. 
  
 ## Lighting Agent Configuration
 

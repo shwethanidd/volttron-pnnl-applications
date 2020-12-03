@@ -1,6 +1,6 @@
 # UnControlLoad Agent
 
-Transactive control and coordination (TCC) agent that interacts with the volttron market service
+The UncontrolLoad Transactive control and coordination (TCC) agent interacts with the volttron market service
  as a consumer electricity. This agent bids in a fixed demand curve to the volttron market service that represents
  the non-transactive (non-controllable) building load.
   

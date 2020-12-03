@@ -1,12 +1,12 @@
 # ModelicaAgent
-
-On start, publishes to Modelica on a configured topic with a configured Modelica payload.  
-Intended to enable/disable actuation of the TCC control agents during a control test.
-
-Note:
-Explain what inputs and outputs define?
-I assume inputs represent topics+ data sent to modelica and outputs
- define topics and data received from modelica
+The Modelica agent allows co-simulation between VOLTTRON and MODELICA. Unlike the EnergyPlus agent 
+the Modelica agent does not start the modelica simulation, but facilitates communication between running modelica
+simulation and VOLTTRON. The outputs define topics and data received from modelica where inputs with the same topics will be
+combined into a single data payload of key-value pairs. The "name" in the input section 
+is the key and the value is the data from modelica for the modelica parameter "field". The "topic" in the input section
+represent the topic name in which data is going to publish on VOLTTRON message bus in the same format as the VOLTTRON MasterDriverAgent.
+In output section, The "name", "field" and "topic" define as the point name, value, topic name of the actuating device
+respectively.   
 
 ## Modelica Installation
 For installing setup in Linux based systems, follow the steps described in

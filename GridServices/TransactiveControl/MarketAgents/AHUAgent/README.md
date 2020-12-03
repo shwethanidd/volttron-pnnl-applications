@@ -2,14 +2,8 @@
 
 The AHU Transactive controls and coordination (TCC) agent interacts with volttron market service
 as a consumer of electricity and a supplier of cooling air to VAV-TCC-agent or zones within the building.
-The zones/VAV agent electronically “bid” on the cooling capacity based on price and desired occupant
+The AHU agent electronically “bid” on the cooling capacity based on price and desired occupant
 comfort level.
-
-Under this approach, the AHU or other controllable loads respond to a price-temperature curve that essentially
-relates the current energy price to the predetermined comfort expectations of building occupants.
-The curve influences AHUs to either reduce power load to balance cost and comfort objectives,
-or in cases of abundant, economical electricity, perhaps increase consumption to perform tasks in advance,
-such as pre-cooling a building.
 
 
 ## AHU Agent Configuration

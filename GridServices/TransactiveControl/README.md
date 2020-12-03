@@ -69,15 +69,32 @@ This work is under way and consists of the following:
 
 ## Example of running Transactive control agents all together in simulation mode:
 
-Swetha's Notes: TCC agents need more description. 
-I think we need to also provide info on how to run them all together in simulation mode. 
-This would contain market service, TNS campus, city agents, eplus etc.
+To run TCC agents all together in the simulation mode, We need to run following agents in a
+volttron environment:
+1. MarketService agent, 
+2. EnergyPlus agent,
+3. PricePublisher agent,
+4. TCC agents (AHU, RTU, Lighting, Meter, VAV, etc)
 
-Run Market-Service agent
+* Install and activate VOLTTRON environment
 
+For installing, starting, and activating the VOLTTRON environment, refer to the following VOLTTRON readthedocs: 
+https://volttron.readthedocs.io/en/develop/introduction/platform-install.html
+
+* Market-Service agent:
+The following JSON configuration file shows all the options currently supported by this agent.
+````
+{
+    "market_period"    : 300,
+    "reservation_delay": 0,
+    "offer_delay"      : 120,
+    "verbose_logging"  : 0
+}
+````
+* Install and start MarketService agent
 
 ````
-python ./scripts/install-agent.py \
+python VOLTTRON_ROOT/scripts/install-agent.py \
     -s services/core/MarketServiceAgent \
     -i platform.market \
     --config transactivecontrol/MarketAgents/config/BRSW/market-service-config \
@@ -86,13 +103,17 @@ python ./scripts/install-agent.py \
     --force
 ````
 
-Install and Run Energy Plus:
-This is an example demonstrates how to run with EnergyPlus simulation, run building model simulations with EnergyPlus,
-send/receive messages back and forth between VOLTTRON and EnergyPlus simulation.
+* Install and start Energy Plus:
+Refer the readme of Energy plus agent for installing and
+running EnergyPlus simulation in the VOLTTRON environment
+https://github.com/VOLTTRON/volttron/tree/develop/examples/EnergyPlusAgent.
 
+This will explain how to run building model simulations with EnergyPlus,send/receive messages backand forth between VOLTTRON
+and EnergyPlus simulation.
 
+Install and start the energy plus agent using the following command: 
 ````
-python ./scripts/install-agent.py \
+python VOLTTRON_ROOT/scripts/install-agent.py \
     -s volttron/pnnl/energyplusagent \
     -i platform.actuator \
     --tag eplus \
@@ -105,10 +126,26 @@ For more information about EnergyPlus, please refer to https://www.energyplus.ne
 Technical documentation about the simulation framework can be found at 
 https://volttron.readthedocs.io/en/develop/developing-volttron/integrating-simulations/index.html
 
-Run price publisher:
+* Install and start PricePublisher agent:
 
+The Price publisher agent reads a csv file with time based electric price information
+and publishes data an array of the last 24-hour prices.  Current implementation assumes that price 
+csv contains hourly price data.  Although the agent would work on sub-hourly 
+price information it does not include a timestamp in the message payload that 
+contains the array of prices, therefore the agent would need to be designed 
+to utilize price information as given or this agent would need to be extended 
+to include timestamp information as well as the price array.
+The yaml format of the config files are specified below. 
+
+Agent config file:
+
+```` yaml
+cron_schedule: '*/5 * * * *'
+price_file: /home/vuzer/transactivecontrol/MarketAgents/config/RTP/RTP-sept.csv
 ````
-python scripts/install-agent.py \
+Install and start the energy plus agent using the following command:
+````
+python VOLTTRON_ROOT/scripts/install-agent.py \
     -s transactivecontrol/MarketAgents/PricePublisher \
     --config  transactivecontrol/MarketAgents/config/BRSW/price_pub.config \
     --tag price_pub \
@@ -117,9 +154,9 @@ python scripts/install-agent.py \
     --start
 
 ````
-Run TCC agents:
+* Install and start TCC agents:
 
-Install and start the AHU Agent using the script install-agent.py as describe below:
+Install and start the TCC Agent using the script install-agent.py as describe below:
 
 ```
 python VOLTTRON_ROOT/scripts/install-agent.py -s <top most folder of the agent> 
