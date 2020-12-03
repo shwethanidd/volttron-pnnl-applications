@@ -1,6 +1,7 @@
 import logging
-from volttron.pnnl.transactive_base.transactive.markets import AggregatorMarket
-from volttron.pnnl.transactive_base.transactive.transactive import TransactiveBase
+
+from transactive_utils.transactive_base.transactive import TransactiveBase
+from transactive_utils.transactive_base.markets import AggregatorMarket
 from volttron.platform.agent.base_market_agent.poly_line import PolyLine
 from volttron.platform.agent.base_market_agent.point import Point
 from volttron.platform.agent.base_market_agent.buy_sell import BUYER, SELLER

@@ -2,8 +2,8 @@ import logging
 import operator
 import importlib
 from volttron.platform.agent import utils
-from volttron.pnnl.models.utils import clamp
-import volttron.pnnl.models.input_names as data_names
+from transactive_utils.models.utils import clamp
+import transactive_utils.models.input_names as data_names
 
 _log = logging.getLogger(__name__)
 utils.setup_logging()

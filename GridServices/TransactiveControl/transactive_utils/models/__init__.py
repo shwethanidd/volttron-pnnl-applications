@@ -14,7 +14,7 @@ class Model(object):
         if not config:
             self.model = None
             return
-        base_module = "volttron.pnnl.models."
+        base_module = "transactive_utils.models." #"volttron_pnnl_applications.GridServices.TransactiveControl.market_base.models."
         try:
             model_type = config["model_type"]
         except KeyError as e:

@@ -60,7 +60,7 @@ import sys
 import logging
 from dateutil.parser import parse
 from volttron.platform.agent import utils
-from volttron.pnnl.transactive_base.transactive.transactive import TransactiveBase
+from transactive_utils.transactive_base.transactive import TransactiveBase
 
 _log = logging.getLogger(__name__)
 utils.setup_logging()

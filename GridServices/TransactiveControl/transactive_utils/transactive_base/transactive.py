@@ -8,9 +8,9 @@ from datetime import datetime as dt
 import dateutil.tz
 import gevent
 from collections import OrderedDict
-from volttron.pnnl.transactive_base.transactive.markets import DayAheadMarket
-from volttron.pnnl.transactive_base.transactive.markets import RealTimeMarket
-from volttron.pnnl.transactive_base.transactive.utils import calculate_hour_of_year, lists_to_dict
+from transactive_utils.transactive_base.markets import DayAheadMarket
+from transactive_utils.transactive_base.markets import RealTimeMarket
+from transactive_utils.transactive_base.utils import calculate_hour_of_year, lists_to_dict
 from volttron.platform.agent.math_utils import mean, stdev
 from volttron.platform.agent.base_market_agent import MarketAgent
 from volttron.platform.agent.base_market_agent.poly_line import PolyLine
@@ -22,7 +22,8 @@ from volttron.platform.messaging import topics, headers as headers_mod
 from volttron.platform.jsonrpc import RemoteError
 from volttron.platform.vip.agent import errors
 
-from volttron.pnnl.models import Model
+from transactive_utils.models import Model
+
 _log = logging.getLogger(__name__)
 setup_logging()
 __version__ = '0.4'
