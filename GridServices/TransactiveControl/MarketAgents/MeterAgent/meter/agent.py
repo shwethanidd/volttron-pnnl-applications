@@ -59,7 +59,7 @@
 import sys
 import logging
 from volttron.platform.agent import utils
-from transactive_utils.transactive_base.aggregator_base import Aggregator
+from volttron.pnnl.transactive_base.transactive.aggregator_base import Aggregator
 from volttron.platform.agent.base_market_agent.poly_line import PolyLine
 from volttron.platform.agent.base_market_agent.point import Point
 
@@ -87,26 +87,25 @@ class MeterAgent(Aggregator):
     def init_predictions(self, output_info):
         pass
 
-    def translate_aggregate_demand(self, agg_demand, index):
+    def update_state(self, market_time, market_index, price, prices):
+        pass
+
+    def translate_aggregate_demand(self, agg_demand, index, market_time, realtime):
         electric_supply_curve = PolyLine()
         if self.demand_limit is not None:
             electric_supply_curve.add(Point(price=0, quantity=self.demand_limit))
             electric_supply_curve.add(Point(price=1000, quantity=self.demand_limit))
         else:
-            if self.market_prices is not None:
-                if self.market_type == "rtp":
-                    self.price = self.current_price
-                else:
-                    self.price = self.market_prices[0]
-            else:
-                self.price = (agg_demand.min_y() + agg_demand.max_y())/2
-            min_q = agg_demand.min_x()*0.9
-            max_q = agg_demand.max_x()*1.1
+            price = (agg_demand.min_y() + agg_demand.max_y()) / 2
+            if self.price_manager is not None:
+                cleared_price = self.price_manager.get_current_cleared_price(market_time)
+                if cleared_price is not None:
+                    price = cleared_price
 
-            electric_supply_curve.add(Point(price=self.price, quantity=min_q))
-            electric_supply_curve.add(Point(price=self.price, quantity=max_q))
-        _log.debug("{}: electric demand : {}".format(self.agent_name, electric_supply_curve.points))
-        self.supplier_curve[index] = electric_supply_curve
+            electric_supply_curve.add(Point(price=price, quantity=0))
+            electric_supply_curve.add(Point(price=price, quantity=10000))
+        _log.debug("{}: electric demand : {}".format(self.core.identity, electric_supply_curve.points))
+        self.supplier_curves[market_time] = electric_supply_curve
 
 
 def main():

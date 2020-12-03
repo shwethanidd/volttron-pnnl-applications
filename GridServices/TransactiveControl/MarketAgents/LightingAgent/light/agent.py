@@ -60,7 +60,7 @@ import sys
 import numpy as np
 import logging
 from volttron.platform.agent import utils
-from transactive_utils.transactive_base.transactive import TransactiveBase
+from volttron.pnnl.transactive_base.transactive.transactive import TransactiveBase
 
 
 _log = logging.getLogger(__name__)
@@ -131,7 +131,7 @@ class LightAgent(TransactiveBase):
     def init_predictions(self, output_info):
         pass
 
-    def update_state(self, market_index, sched_index, price):
+    def update_state(self, market_time, market_index, occupied, price, prices):
         self.update_flag[market_index] = True
 
 

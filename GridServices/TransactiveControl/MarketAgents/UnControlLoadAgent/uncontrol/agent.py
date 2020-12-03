@@ -101,17 +101,11 @@ def uncontrol_agent(config_path, **kwargs):
     base_name = config.get('market_name', 'electric')
     market_name = []
     q_uc = []
-    price_multiplier = config.get('price_multiplier', 1.0)
-    default_min_price = config.get('static_minimum_price', 0.01)
-    default_max_price = config.get('static_maximum_price', 100.0)
-    market_type = config.get("market_type", "tns")
-    single_market_interval = config.get("single_market_interval", 15)
-    market_number = 24
-    if market_type == "rtp":
-        market_number = 1
-    for i in range(market_number):
-        market_name.append('_'.join([base_name, str(i)]))
+    price_multiplier = config.get('price_multiplier', 2.0)
+    default_min_price = config.get('default_min_price', 0.01)
+    default_max_price = config.get('default_min_price', 100.0)
     for i in range(24):
+        market_name.append('_'.join([base_name, str(i)]))
         q_uc.append(float(config.get("power_" + str(i), 0)))
 
     verbose_logging = config.get('verbose_logging', True)
@@ -121,18 +115,15 @@ def uncontrol_agent(config_path, **kwargs):
                                           path="",
                                           point="all")
     devices = config.get("devices")
-    static_price_flag = config.get('static_price_flag', False)
-
     record_topic = '/'.join(["tnc", config.get("campus", ""), config.get("building", "")])
     sim_flag = config.get("sim_flag", False)
-
-    return UncontrolAgent(agent_name, market_name, single_market_interval, verbose_logging, q_uc, building_topic, devices,
-                          price_multiplier, default_min_price, default_max_price, sim_flag, record_topic, static_price_flag, **kwargs)
+    return UncontrolAgent(agent_name, market_name, verbose_logging, q_uc, building_topic, devices,
+                          price_multiplier, default_min_price, default_max_price, sim_flag, record_topic, **kwargs)
 
 
 class UncontrolAgent(MarketAgent):
-    def __init__(self, agent_name, market_name, single_market_interval, verbose_logging, q_uc, building_topic, devices,
-                 price_multiplier, default_min_price, default_max_price, sim_flag, record_topic, static_price_flag, **kwargs):
+    def __init__(self, agent_name, market_name, verbose_logging, q_uc, building_topic, devices,
+                 price_multiplier, default_min_price, default_max_price, sim_flag, record_topic, **kwargs):
         super(UncontrolAgent, self).__init__(verbose_logging, **kwargs)
         self.market_name = market_name
         self.q_uc = q_uc
@@ -140,8 +131,6 @@ class UncontrolAgent(MarketAgent):
         self.price_multiplier = price_multiplier
         self.default_max_price = default_max_price
         self.default_min_price = default_min_price
-        self.static_price_flag = static_price_flag
-
         self.infinity = 1000000
         self.current_hour = None
         self.power_aggregation = []
@@ -152,8 +141,6 @@ class UncontrolAgent(MarketAgent):
         self.agent_name = agent_name
         self.uc_load_array = []
         self.prices = []
-        self.single_timestep_power = 0
-        self.single_market_interval = single_market_interval
         self.normalize_to_hour = 0.
         self.record_topic = record_topic
         self.current_datetime = None
@@ -244,10 +231,7 @@ class UncontrolAgent(MarketAgent):
                 self.current_power = sum(self.power_aggregation)
             else:
                 self.current_power = 0.
-            _log.debug("ERROR - topic: {} -- waiting on {}".format(topic, self.demand_aggregation_working))
             self.demand_aggregation_working = self.demand_aggregation_master.copy()
-            self.power_aggregation = []
-            return
 
         conversion = current_points.get("conversion")
         point_list = []
@@ -270,37 +254,21 @@ class UncontrolAgent(MarketAgent):
                 self.current_power = 0.
             self.power_aggregation = []
             self.demand_aggregation_working = self.demand_aggregation_master.copy()
-            if len(self.market_name) > 1:
-                if self.current_hour is not None and current_hour != self.current_hour:
-                    self.q_uc[self.current_hour] = max(- mean(self.uc_load_array)*self.normalize_to_hour/60.0, 10.0)
-                    _log.debug("Current hour uncontrollable load: {}".format(mean(self.uc_load_array)*self.normalize_to_hour/60.0))
-                    self.uc_load_array = []
-                    self.normalize_to_hour = 0
-            else:
-                if len(self.uc_load_array) > self.single_market_interval:
-                    self.uc_load_array.pop(0)
-                smoothing_constant = 2.0 / (len(self.uc_load_array) + 1.0) * 2.0 if self.uc_load_array else 1.0
-                smoothing_constant = smoothing_constant if smoothing_constant <= 1.0 else 1.0
-                power_sort = list(self.uc_load_array)
-                power_sort.sort(reverse=True)
-                exp_power = 0
-                for n in range(len(self.uc_load_array)):
-                    exp_power += power_sort[n] * smoothing_constant * (1.0 - smoothing_constant) ** n
-                exp_power += power_sort[-1] * (1.0 - smoothing_constant) ** (len(self.uc_load_array))
-                _log.debug("Projected power: {}".format(exp_power))
-                self.single_timestep_power = -exp_power
+
+            if self.current_hour is not None and current_hour != self.current_hour:
+                self.q_uc[self.current_hour] = max(- mean(self.uc_load_array)*self.normalize_to_hour/60.0, 10.0)
+                _log.debug("Current hour uncontrollable load: {}".format(mean(self.uc_load_array)*self.normalize_to_hour/60.0))
+                self.uc_load_array = []
+                self.normalize_to_hour = 0
+
             self.current_hour = current_hour
 
     def create_demand_curve(self, load_index, index):
         demand_curve = PolyLine()
         price_min, price_max = self.determine_prices()
         try:
-            if len(self.market_name) > 1:
-                qMin = self.q_uc[load_index]
-                qMax = self.q_uc[load_index]
-            else:
-                qMin = self.single_timestep_power
-                qMax = self.single_timestep_power
+            qMin = self.q_uc[load_index]
+            qMax = self.q_uc[load_index]
             demand_curve.add(Point(price=max(price_min, price_max), quantity=min(qMin, qMax)))
             demand_curve.add(Point(price=min(price_min, price_max), quantity=max(qMin, qMax)))
         except:
@@ -314,7 +282,7 @@ class UncontrolAgent(MarketAgent):
 
     def determine_prices(self):
         try:
-            if self.prices and not self.static_price_flag:
+            if self.prices:
                 avg_price = mean(self.prices)
                 std_price = stdev(self.prices)
                 price_min = avg_price - self.price_multiplier * std_price

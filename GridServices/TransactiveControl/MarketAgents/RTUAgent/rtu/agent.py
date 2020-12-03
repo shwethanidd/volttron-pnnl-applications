@@ -58,10 +58,9 @@
 
 import sys
 import logging
-
-from datetime import timedelta as td
+from dateutil.parser import parse
 from volttron.platform.agent import utils
-from transactive_utils.transactive_base.transactive import TransactiveBase
+from volttron.pnnl.transactive_base.transactive.transactive import TransactiveBase
 
 _log = logging.getLogger(__name__)
 utils.setup_logging()
@@ -83,16 +82,13 @@ class RTUAgent(TransactiveBase):
     def init_predictions(self, output_info):
         pass
 
-    def update_state(self, market_index, sched_index, price):
-        market_time = self.current_datetime + td(hours=market_index + 1)
-        occupied = self.check_future_schedule(market_time)
+    def update_state(self, market_time, market_index, occupied, price, prices):
         if occupied:
-            prices = self.determine_prices()
             _set = self.determine_control(self.ct_flexibility, prices, price)
         else:
             _set = self.off_setpoint
 
-        self.model.update(_set, sched_index, market_index, occupied)
+        self.model.update(_set, parse(market_time))
         self.update_flag[market_index] = True
 
 
