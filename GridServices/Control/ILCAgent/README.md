@@ -392,7 +392,8 @@ Install and start the ILC Agent using the script install-agent.py as describe be
 python VOLTTRON_ROOT/scripts/install-agent.py -s <top most folder of the agent> \
                                 -i ilc.agent \
                                 -t ilc \
-                                --start --force
+                                --start \
+                                --force
 ```
 where VOLTTRON_ROOT is the root of the source directory of VOLTTRON.
 
