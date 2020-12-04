@@ -1,9 +1,16 @@
 # AHU Agent
 
-The AHU Transactive controls and coordination (TCC) agent interacts with volttron market service
-as a consumer of electricity and a supplier of cooling air to VAV-TCC-agent or zones within the building.
-The AHU agent electronically “bid” on the cooling capacity based on price and desired occupant
-comfort level.
+The AHU Transactive control and coordination (TCC) agent interacts with the VOLTTRON market service
+as a consumer of electricity and as a supplier of cooling air to VAV TCC agent(s).  For information on the VOLTTRON
+Market Service see:
+
+https://volttron.readthedocs.io/en/develop/developing-volttron/developing-agents/developing-market-agents.html#developing-market-agents
+
+The following Schematic of a transactive market with agents depicted as red rectangles and markets depicted as green ovals is a simple example
+that shows the relationship between the AHU agent, VAV agent, and VOLTTRON market service (labeled Building internal market).
+In a real building deployment the building could have many AHUs, each serving different VAVs, as well as other devices bidding into the electric market (e.g., lighting).
+
+![img.png](img.png)
 
 
 ## AHU Agent Configuration
@@ -19,11 +26,11 @@ You can specify the configuration in either json or yaml format. The json format
     "input_data_timezone": "UTC", # if omitted defaults to "UTC"
     "supplier_market_name": "air1",
 	"consumer_market_name": "electric",
-
+    "market_type": "rtp",
     "agent_name": "ahu1",
     "inputs": [
         {
-            "mapped": "sfs", # mapped value does not change (for rtu agent or vav agent)
+            "mapped": "sfs", # mapped value does not change
             "point": "SupplyFanStatus",
             "topic": "devices/CAMPUS/BUILDING/AHU1/all",
             "inital_value": 0
@@ -59,9 +66,9 @@ You can specify the configuration in either json or yaml format. The json format
         "equipment_configuration": {
             "has_economizer": true,
             "economizer_limit": 18.33,
-            "supply-air sepoint": 13.0,
-            "nominal zone-setpoint": 21.1,
-            "building chiller": true
+            "supply_air_sepoint": 13.0,
+            "nomina_zone_setpoint": 21.1,
+            "building_chiller": true
         },
         "model_configuration": {
             "c0": 0.0024916812889370643,
@@ -69,7 +76,7 @@ You can specify the configuration in either json or yaml format. The json format
             "c2": -0.15144710994850016,
             "c3": 0.060900887939007789,
             "cpAir": 1.006, #kj/kgK for calculation of kW
-            "COP" : 5.5
+            "COP" : 5.5 
         }
     }
 }

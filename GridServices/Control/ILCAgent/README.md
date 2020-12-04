@@ -1,4 +1,4 @@
-# Intelligent Load Control (ILC) Application
+# Intelligent Load Control (ILC) Agent
 
 ILC supports traditional demand response as well as transactive energy
 services. ILC manages controllable loads while also mitigating
@@ -9,20 +9,31 @@ qualitative rules (type of zone).
 
 ## ILC Agent Configuration
 
-For ILC agent, you will require four config files -
- 1. ILC (main) config
- 2. Control config file
- 3. criteria config file, and
- 4. pairwise_criteria_file.
-
-The json format of the config files are specified below.
-In control and criteria files contains both curtail setting and augment settings.
+The  ILC agent, requires four configuration files per device cluster (i.e., homogenous set of devices).  These
+files should be loaded into the agent's config store via vctl config command line interface.  The files are as follows:
+ 1. config - ILC (main) configuration.  This file is loaded into the agent's config store with 
+    cannonical name "config"
+ 2. device_control_config - Contains information related to the control of device cluster.  File reference, as shown
+    in the example ILC "config" below is with respect to the config store with configuration name "control_config". 
+ 3. device_criteria_config - Contains information related to the use of real time data to prioritize devices within cluster for
+    load management.  File reference, as shown in the example ILC "config" below is with respect to the config store 
+    with configuration name "criteria_config". 
+ 4. pairwise_criteria_file - Contains information related to the relative importance of each criteria for a device cluster.
+    File reference, as shown in the example ILC "config" below is with respect to the config store 
+    with configuration name "pairwise_criteria.json".
  
-These config files can be created using the config-web-tool: https://ilc-configuration-tool.web.app/.
-You can follow instruction from the ilc-readthedocs https://userguide-ilc.readthedocs.io/en/latest/ while creating config
-file using the config-web-tool
+A web-based configuration tool has been developed to simply creation of the configuration files for ILC.
+The web tool can be accessed at: 
 
-*  ILC config file:
+https://ilc-configuration-tool.web.app/
+
+Instructions for the configuration web-tool can be found here: 
+
+https://userguide-ilc.readthedocs.io/en/latest/
+
+Examples of each configuration file are as follows - 
+
+*  ILC "config":
 
 ````
 {
@@ -46,9 +57,9 @@ file using the config-web-tool
     "stagger_off_time": true,
     "clusters": [ 
         {
-            "device_control_file": "control_config",
-            "device_criteria_file": "criteria_config",
-            "pairwise_criteria_file": "pairwise_criteria.json",
+            "device_control_config": "config://control_config",
+            "device_criteria_config": "config://criteria_config",
+            "pairwise_criteria_config": "config://pairwise_criteria.json",
             "cluster_priority": 1.0
         }
     ]
@@ -56,7 +67,7 @@ file using the config-web-tool
 
 ````
 
-* Control config file:  
+* device_control_config:  
 
 ````
 {
@@ -122,17 +133,18 @@ file using the config-web-tool
 }
 
 ````
-* Criteria Config file:
+* device_criteria_config:
 
-In this config file, any number of relevant criteria can be define to prioritize loads for curtail or augment
-the electricity consumption. In the following example, five criteria are used;
- 1. Zonetemperature-setpoint,
+In this configuration, any number of relevant criteria can be defined to prioritize loads for curtailment (reducing) 
+or augmentation (increasing) a building's electricity consumption. In the following example, five criteria are used;
+ 1. zonetemperature-setpoint,
  2. rated-power,
  3. room-type,
  4. stage,
  5. history-zonetemperature.
  
-This criteria differentiate by their operation types
+These criteria are differentiated  by their operation type.  The five different types of criteria are formula, status, 
+mapper, constant, and history.  In the configuration that follows, an example for each type of criteria is given:
    
 ````
 {
@@ -179,8 +191,9 @@ This criteria differentiate by their operation types
                     "operation": "1/(CoolingTemperatureSetPoint-AverageZoneTemperature)",
                     "operation_type": "formula",
                     "operation_args": {
-                                        "always": ["CoolingTemperatureSetPoint", "AverageZoneTemperature"]
-                                      },
+                        "always": ["CoolingTemperatureSetPoint", "AverageZoneTemperature"],
+                        "nc": ["
+                    },
                     "minimum": 0,
                     "maximum": 10
                 },
@@ -279,10 +292,19 @@ This criteria differentiate by their operation types
                 }
             }
         }
+    },
+    "mappers": {
+        "zone_type": {
+            "Private Office": 1,
+            "Office": 3,
+            "Conference Room": 5,
+            "Lobby": 9,
+            "Restroom": 9
+        }
     }
 }
 ````
-* Pair-Wise Comparison of Selected Criteria:
+* pariwise_criteria_config:
 
 The relative importance of the two criteria is measured and evaluated
 according to a numerical scale from 1 to 9. The higher the value, the more important the corresponding criterion is. Pair-wise
@@ -348,31 +370,38 @@ https://volttron.readthedocs.io/en/develop/introduction/platform-install.html
 To store ILC configuration files in the Configuration Store use the following store sub-command: 
 
 ```
-vctl cofig store agent.ILC <config name> <path of config file>
+vctl cofig store <ILC agent VIP> <config name> <path of config file>
+```
+
+Using the previous example configurations, the commands would be as follows
+ (assuming the ILC agents VIP identity is ilc.agent):
 
 ```
+vctl config store ilc.agent config <path of config file>
+vctl config store ilc.agent control_config <path to device_control_config>
+vctl config store ilc.agent criteria_config <path to device_criteria_config>
+vctl config store ilc.agent pairwise_criteria.json <path to pairwise_criteria_config>
+```
+
 Other sub-commands of "config store command-line" tool can be found here: 
 https://volttron.readthedocs.io/en/develop/platform-features/config-store/commandline-interface.html
 
 ## Installing and Running ILC Agent
 Install and start the ILC Agent using the script install-agent.py as describe below:
 ```
-python VOLTTRON_ROOT/scripts/install-agent.py -s <top most folder of the agent> 
-                                -c <Agent config file>
-                                -i agent.ILC
-                                -t ILC
+python VOLTTRON_ROOT/scripts/install-agent.py -s <top most folder of the agent> \
+                                -i ilc.agent \
+                                -t ilc \
                                 --start --force
 ```
-, where VOLTTRON_ROOT is the root of the source directory of VOLTTRON.
+where VOLTTRON_ROOT is the root of the source directory of VOLTTRON.
 
--s : followed by path of top most folder of the ILC agent
+-s : path of top most folder of the ILC agent
 
--c : followed by path of the main config file
+-i : agent VIP identity
 
--i : followed by agent identity
-
--t : followed by name tag
+-t : agent tag
  
 --start (optional): start after installation
 
---force (optional): overwrites existing ilc agent with identity "agent.ILC" 
+--force (optional): overwrites existing ilc agent with identity <ILC agent VIP> 
