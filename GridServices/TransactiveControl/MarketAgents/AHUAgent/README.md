@@ -24,16 +24,18 @@ You can specify the configuration in either json or yaml format. The json format
     "campus": "CAMPUS", # if omitted defaults to ""
     "building": "BUILDING", # if omitted defaults to ""
     "input_data_timezone": "UTC", # if omitted defaults to "UTC"
-    "supplier_market_name": "air1",
-	"consumer_market_name": "electric",
-    "market_type": "rtp",
+    "supplier_market_name": "air1", # market name, VAVs served by AHU must use this as market_name
+	"consumer_market_name": "electric", # consumer market name  - default is electric
+    "market_type": "rtp", # rtp for real time price (single timestep) market
     "agent_name": "ahu1",
+    # inputs describe data received from a device and available for use in model to make
+    # prediction of power flexibility.
     "inputs": [
         {
             "mapped": "sfs", # mapped value does not change
-            "point": "SupplyFanStatus",
-            "topic": "devices/CAMPUS/BUILDING/AHU1/all",
-            "inital_value": 0
+            "point": "SupplyFanStatus", # Point name as published by VOLTTRON driver
+            "topic": "devices/CAMPUS/BUILDING/AHU1/all", # topic published by VOLTTRON driver
+            "inital_value": 0 # Agent stored value for parameter is intialized to this value
         },
         {
             "mapped": "oat",
@@ -67,7 +69,7 @@ You can specify the configuration in either json or yaml format. The json format
             "has_economizer": true,
             "economizer_limit": 18.33,
             "supply_air_sepoint": 13.0,
-            "nomina_zone_setpoint": 21.1,
+            "nominal_zone_setpoint": 21.1,
             "building_chiller": true
         },
         "model_configuration": {
