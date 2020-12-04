@@ -138,27 +138,6 @@ You can specify the configuration in either json or yaml format. The json format
     "power_19": 900.16603769999995, 
     "power_18": 967.11965269999996
 }
-    ],
-    "outputs": [],
-    "schedule":{},
-    "model_parameters": {
-        "equipment_configuration": {
-            "has_economizer": true,
-            "economizer_limit": 18.33,
-            "supply-air sepoint": 13.0,
-            "nominal zone-setpoint": 21.1,
-            "building chiller": true
-        },
-        "model_configuration": {
-            "c0": 0.0024916812889370643,
-            "c1": 0.53244827213615642,
-            "c2": -0.15144710994850016,
-            "c3": 0.060900887939007789,
-            "cpAir": 1.006, #kj/kgK for calculation of kW
-            "COP" : 5.5
-        }
-    }
-}
 ````
 User can create a config file using the tcc-config-web-tool: https://tcc-configuration-tool.web.app/
 and follow instructions from the tcc-userguide https://tcc-userguide.readthedocs.io/en/latest/
