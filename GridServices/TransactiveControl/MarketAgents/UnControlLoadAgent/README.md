@@ -13,106 +13,31 @@ You can specify the configuration in either json or yaml format. The json format
 
 ````
 {
-	"market_name": "electric",
-	"campus": "PNNL",
+    "market_name": "electric",
+    "campus": "CAMPUS",
     "building": "BUILDING1",
-	"agent_name": "uncontrol",
-    "sim_flag": true, 	
+    "agent_name": "uncontrol",
+    "sim_flag": true, 
+    "market_type": "rtp",
+    "single_market_interval": 
 	"devices": {
         "LIGHTING/Basement": {
             "points": ["Power"],
-            "conversion": "Power/1000.0"
-        },
-        "LIGHTING/Core_bottom": {
-            "points": ["Power"],
-            "conversion": "Power/1000.0"
-        },
-        "LIGHTING/Core_mid": {
-            "points": ["Power"],
-            "conversion": "Power/1000.0"
-        },
-        "LIGHTING/Core_top": {
-            "points": ["Power"],
-            "conversion": "Power/1000.0"
-        },
-        "LIGHTING/Perimeter_bot_ZN_1": {
-            "points": ["Power"],
-            "conversion": "Power/1000.0"
-        },
-        "LIGHTING/Perimeter_bot_ZN_2": {
-            "points": ["Power"],
-            "conversion": "Power/1000.0"
-        },
-        "LIGHTING/Perimeter_bot_ZN_3": {
-            "points": ["Power"],
-            "conversion": "Power/1000.0"
-        },
-        "LIGHTING/Perimeter_bot_ZN_4": {
-            "points": ["Power"],
-            "conversion": "Power/1000.0"
-        },
-        "LIGHTING/Perimeter_mid_ZN_1": {
-            "points": ["Power"],
-            "conversion": "Power/1000.0"
-        },
-        "LIGHTING/Perimeter_mid_ZN_2": {
-            "points": ["Power"],
-            "conversion": "Power/1000.0"
-        },
-        "LIGHTING/Perimeter_mid_ZN_3": {
-            "points": ["Power"],
-            "conversion": "Power/1000.0"
-        },
-        "LIGHTING/Perimeter_mid_ZN_4": {
-            "points": ["Power"],
-            "conversion": "Power/1000.0"
-        },
-        "LIGHTING/Perimeter_top_ZN_1": {
-            "points": ["Power"],
-            "conversion": "Power/1000.0"
-        },
-        "LIGHTING/Perimeter_top_ZN_2": {
-            "points": ["Power"],
-            "conversion": "Power/1000.0"
-        },
-        "LIGHTING/Perimeter_top_ZN_3": {
-            "points": ["Power"],
-            "conversion": "Power/1000.0"
-        },
-        "LIGHTING/Perimeter_top_ZN_4": {
-            "points": ["Power"],
-            "conversion": "Power/1000.0"
+            "conversion": "-Power"
         },
         "AHU1": {
             "points": ["SupplyFanPower"],
-            "conversion": "SupplyFanPower/1000.0"
-        },
-        "AHU2": {
-            "points": ["SupplyFanPower"],
-            "conversion": "SupplyFanPower/1000.0"
-        },
-        "AHU3": {
-            "points": ["SupplyFanPower"],
-            "conversion": "SupplyFanPower/1000.0"
-        },
-        "AHU4": {
-            "points": ["SupplyFanPower"],
-            "conversion": "SupplyFanPower/1000.0"
+            "conversion": "-SupplyFanPower"
         },
         "Chiller1": {
             "points": ["Power"],
-            "conversion": "Power/(1000.0)"
+            "conversion": "-Power"
         },
-        "Chiller2": {
-            "points": ["Power"],
-            "conversion": "Power/(1000.0)"
-        },
-		"METERS": {
-			"points": ["WholeBuildingPower"],
-			"conversion": "WholeBuildingPower*(-0.001)"
-		}
-
-	},
+        "METERS": {
+            "points": ["WholeBuildingPower"],
+            "conversion": "WholeBuildingPower"
+        }
+    },
     "power_20": 910.92720999999995, 
     "power_21": 620.0424549999999, 
     "power_22": 463.91088619999999, 
@@ -139,8 +64,37 @@ You can specify the configuration in either json or yaml format. The json format
     "power_18": 967.11965269999996
 }
 ````
-User can create a config file using the tcc-config-web-tool: https://tcc-configuration-tool.web.app/
-and follow instructions from the tcc-userguide https://tcc-userguide.readthedocs.io/en/latest/
+
+The agent builds subscriptions to device data using  the campus, building, and devices information.  In this example
+the agent subscribes to devices published on:
+   ````
+   devices/CAMPUS/BUILDING1/LIGHTING/Basement/all
+   devices/CAMPUS/BUILDING1/AHU1/all
+   devices/CAMPUS/BUILDING1/CHILLER1/all
+   devices/CAMPUS/BUILDING1/METERS/all
+   ````
+Each of the entries in "devices" represents either a controllable load or the building level power meter.
+For example, for the entry that follows the conversion field is an equation that is evaluated using the point "Power"
+from the Lighting/Basement device (published by the MasterDriverAgent).
+
+````
+"LIGHTING/Basement": {
+    "points": ["Power"],
+    "conversion": "-Power"
+}
+````
+
+All the conversion equations for each controllable load is summed as well as the building level power meter.  Since all of the controllable
+loads have negative signs we get the following evaluation:
+
+    Uncontrollable load = (Total Building Power Measurement) - (Sum of controllable loads)
+
+When the configuration parameter "market_type" is set to "rtp" (real time price), the agent uses a exponential
+forecasting to predict the uncontrollable load during the next market cycle.  If the "market_type" configuration parameter
+is set to "tns", then the uncontrollable load averages and stores each hours uncontrollable load.  Since the TNS market is an 
+hourly day-ahead market.  The average stored value for the previous day for the same market hour is used to produce the demand curve.
+The values in the configuration file labled "power_0" - "power_23" are the initialized uncontrollable loads for the TNS market 
+during the first day of predictions.
 
 ## Install and activate VOLTTRON environment
 For installing, starting, and activating the VOLTTRON environment, refer to the following VOLTTRON readthedocs: 

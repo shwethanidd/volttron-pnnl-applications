@@ -215,7 +215,7 @@ The following configuration file is for a VAV TCC agent.
 ````
 
 All TCC agent configuration files have top level configurations, an inputs section, 
-outputs section, schedule section, and model_parameters section.  The following is a configuration file for a TCC VAV agent.
+outputs section, schedule section, and model_parameters section.
 
 The TCC agent top level configuration parameters contains agent identifiers (e.g., agent_name and market_name).  The TCC agent top level configurations parameters are as follows:
 

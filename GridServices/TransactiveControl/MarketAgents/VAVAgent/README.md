@@ -18,12 +18,12 @@ You can specify the configuration in either json or yaml format. The json format
 
 ````
 {
-    "campus": "PNNL", 
-    "building": "3860_BUILDING", 
+    "campus": "CAMPUS", 
+    "building": "BUILDING", 
     "actuation_enable_topic": "default", 
     "input_data_timezone": "UTC", 
     "actuation_enabled_onstart": true, 
-    "agent_name": "vav_VAV102", 
+    "agent_name": "vav1", 
     "actuation_method": "periodic", 
     "control_interval": 300, 
     "market_name": "air_AHU1", 
@@ -31,31 +31,31 @@ You can specify the configuration in either json or yaml format. The json format
         {
             "mapped": "sfs", 
             "point": "SupplyFanStatus", 
-            "topic": "devices/PNNL/3860_BUILDING/AHU1/all", 
+            "topic": "devices/CAMPUS/BUILDING/AHU1/all", 
             "inital_value": 0
         }, 
         {
             "mapped": "oat", 
             "point": "OutdoorAirTemperature", 
-            "topic": "devices/PNNL/3860_BUILDING/AHU1/all", 
+            "topic": "devices/CAMPUS/BUILDING/AHU1/all", 
             "inital_value": 72.0
         }, 
         {
             "mapped": "zt", 
             "point": "ZoneTemperature", 
-            "topic": "devices/PNNL/3860_BUILDING/AHU1/VAV102/all", 
+            "topic": "devices/CAMPUS/BUILDING/AHU1/VAV1/all", 
             "inital_value": 72
         }, 
         {
             "mapped": "zdat", 
             "point": "ZoneDischargeAirTemperature", 
-            "topic": "devices/PNNL/3860_BUILDING/AHU1/VAV102/all", 
+            "topic": "devices/CAMPUS/BUILDING/AHU1/VAV1/all", 
             "inital_value": 55.0
         }, 
         {
             "mapped": "zaf", 
             "point": "ZoneAirFlow", 
-            "topic": "devices/PNNL/3860_BUILDING/AHU1/VAV102/all", 
+            "topic": "devices/CAMPUS/BUILDING/AHU1/VAV1/all", 
             "inital_value": 0.0
         }
     ], 
@@ -63,7 +63,7 @@ You can specify the configuration in either json or yaml format. The json format
         {
             "mapped": "csp", 
             "point": "ZoneCoolingTemperatureSetPoint", 
-            "topic": "PNNL/3860_BUILDING/AHU1/VAV102/ZoneCoolingTemperatureSetPoint", 
+            "topic": "CAMPUS/BUILDING/AHU1/VAV1/ZoneCoolingTemperatureSetPoint", 
             "flexibility_range": [
                 550.0, 
                 165.0
