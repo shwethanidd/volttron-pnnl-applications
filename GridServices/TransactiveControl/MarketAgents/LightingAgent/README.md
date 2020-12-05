@@ -114,20 +114,21 @@ Install and start the Lighting Agent using the script install-agent.py as descri
 
 ```
 python VOLTTRON_ROOT/scripts/install-agent.py -s <top most folder of the agent> 
-                                -c <Agent config file>
-                                -i agent.Lighting
-                                -t Lighting
-                                --start --force
+                                -c <Agent config file> \
+                                -i agent.Lighting \
+                                -t Lighting \
+                                --start \
+                                --force
 ```
 , where VOLTTRON_ROOT is the root of the source directory of VOLTTRON.
 
--s : followed by path of top most folder of the Lighting agent
+-s : path of top most folder of the ILC agent
 
--c : followed by path of the agent config file
+-c : path of the agent config file
 
--i : followed by agent identity
+-i : agent VIP identity
 
--t : followed by name tag
+-t : agent tag
  
 --start (optional): start after installation
 
