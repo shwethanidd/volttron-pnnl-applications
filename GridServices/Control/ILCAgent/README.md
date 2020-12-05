@@ -18,7 +18,7 @@ files should be loaded into the agent's config store via vctl config command lin
  3. device_criteria_config - Contains information related to the use of real time data to prioritize devices within cluster for
     load management.  File reference, as shown in the example ILC "config" below is with respect to the config store 
     with configuration name "criteria_config". 
- 4. pairwise_criteria_file - Contains information related to the relative importance of each criteria for a device cluster.
+ 4. pairwise_criteria_config - Contains information related to the relative importance of each criteria for a device cluster.
     File reference, as shown in the example ILC "config" below is with respect to the config store 
     with configuration name "pairwise_criteria.json".
  
