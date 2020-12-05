@@ -1,12 +1,11 @@
 # ModelicaAgent
-The Modelica agent allows co-simulation between VOLTTRON and MODELICA. Unlike the EnergyPlus agent 
-the Modelica agent does not start the modelica simulation, but facilitates communication between running modelica
-simulation and VOLTTRON. The outputs define topics and data received from modelica where inputs with the same topics will be
-combined into a single data payload of key-value pairs. The "name" in the input section 
-is the key and the value is the data from modelica for the modelica parameter "field". The "topic" in the input section
-represent the topic name in which data is going to publish on VOLTTRON message bus in the same format as the VOLTTRON MasterDriverAgent.
-In output section, The "name", "field" and "topic" define as the point name, value, topic name of the actuating device
-respectively.   
+The Modelica agent allows co-simulation between VOLTTRON and Modelica. Unlike the EnergyPlus agent 
+the Modelica agent does not start the modelica simulation, but facilitates communication between a running modelica
+simulation and VOLTTRON.
+
+The Modelica model that co-simulates with VOLTTRON must have the appropriate output and input blocks created within the
+Modelica model to facilitate this co-simulation.  The documentation for this process has not yet been created but for further 
+assistance one can email sen.huang@pnnl.gov for support.
 
 ## Modelica Installation
 For installing setup in Linux based systems, follow the steps described in
@@ -54,6 +53,13 @@ User can specify the configuration in either json or yaml format. The json forma
         }
 }          
 ````
+
+The "outputs" section of the agent's configuration define topics and data received from modelica where outputs with the same topic will be
+combined into a single data payload of key-value pairs. The "name" in the "outputs" section  is the key and the value is the 
+data from modelica for the modelica parameter "field". The "topic" in the "outputs" section represent the topic name in which data 
+is going to publish on VOLTTRON message bus in the same format as the VOLTTRON MasterDriverAgent.
+In "inputs" section, The "name", "field" and "topic" define as the point name, Modelica name identifier, topic name of the actuating device
+respectively.
 
 ## Install and activate VOLTTRON environment
 For installing, starting, and activating the VOLTTRON environment,
