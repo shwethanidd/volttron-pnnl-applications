@@ -22,7 +22,7 @@ files should be loaded into the agent's config store via vctl config command lin
     File reference, as shown in the example ILC "config" below is with respect to the config store 
     with configuration name "pairwise_criteria.json".
  
-A web-based configuration tool has been developed to simply creation of the configuration files for ILC.
+A web-based configuration tool has been developed to simplify creation of the configuration files for ILC.
 The web tool can be accessed at: 
 
 https://ilc-configuration-tool.web.app/
