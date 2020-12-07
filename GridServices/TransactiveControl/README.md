@@ -177,5 +177,4 @@ python VOLTTRON_ROOT/scripts/install-agent.py -s <top most folder of the agent>
  
 --start (optional): start after installation
 
---force (optional): overwrites existing ilc agent with identity "agent.AHU" 
-
+--force (optional): overwrites the existing agent
