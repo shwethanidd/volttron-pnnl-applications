@@ -219,10 +219,8 @@ outputs section, schedule section, and model_parameters section.
 
 The TCC agent top level configuration parameters contains agent identifiers (e.g., agent_name and market_name).  The TCC agent top level configurations parameters are as follows:
 
- - campus – string value for the campus name.  This value is used to build record topic for storage of TCC results in a local or remote database.
-
-
- - building –string value for the building name.  This value is used to build record topic for storage of TCC results in a local or remote database.
+ * campus – string value for the campus name.  This value is used to build record topic for storage of TCC results in a local or remote database.
+ * building –string value for the building name.  This value is used to build record topic for storage of TCC results in a local or remote database.
 
 
  - agent_name – string value for the agent name.  This value is used to build record topic for storage of TCC results in a local or remote database.
