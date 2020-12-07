@@ -66,3 +66,115 @@ This work is under way and consists of the following:
 2. Forecasting the hourly average flexibility of each controllable load for the next 24-hour period (i.e., an hourly average value for maximum and minimum consumptions for each controllable load) based on historical data and current weather conditions.
 
 3. The methodology for accomplishing this is in progress and this feature should be incorporated in software tested for the June milestone.
+
+## Example of running Transactive control agents all together in simulation mode:
+
+To run TCC agents all together in the simulation mode, We need to run following agents in a
+volttron environment:
+1. MarketService agent, 
+2. EnergyPlus agent,
+3. PricePublisher agent,
+4. TCC agents (AHU, RTU, Lighting, Meter, VAV, etc)
+
+* Install and activate VOLTTRON environment
+
+For installing, starting, and activating the VOLTTRON environment, refer to the following VOLTTRON readthedocs: 
+https://volttron.readthedocs.io/en/develop/introduction/platform-install.html
+
+* Market-Service agent:
+The following JSON configuration file shows all the options currently supported by this agent.
+````
+{
+    "market_period"    : 300,
+    "reservation_delay": 0,
+    "offer_delay"      : 120,
+    "verbose_logging"  : 0
+}
+````
+* Install and start MarketService agent
+
+````
+python VOLTTRON_ROOT/scripts/install-agent.py \
+    -s services/core/MarketServiceAgent \
+    -i platform.market \
+    --config transactivecontrol/MarketAgents/config/BRSW/market-service-config \
+    --tag market-service \
+    --start \
+    --force
+````
+
+* Install and start Energy Plus:
+Refer the readme of Energy plus agent for installing and
+running EnergyPlus simulation in the VOLTTRON environment
+https://github.com/VOLTTRON/volttron/tree/develop/examples/EnergyPlusAgent.
+
+This will explain how to run building model simulations with EnergyPlus,send/receive messages backand forth between VOLTTRON
+and EnergyPlus simulation.
+
+Install and start the energy plus agent using the following command: 
+````
+python VOLTTRON_ROOT/scripts/install-agent.py \
+    -s volttron/pnnl/energyplusagent \
+    -i platform.actuator \
+    --tag eplus \
+    --config transactivecontrol/MarketAgents/config/BRSW/ep_BRSW2.config \
+    --start \
+    --force
+````
+
+For more information about EnergyPlus, please refer to https://www.energyplus.net/sites/default/files/docs/site_v8.3.0/GettingStarted/GettingStarted/index.html.
+Technical documentation about the simulation framework can be found at 
+https://volttron.readthedocs.io/en/develop/developing-volttron/integrating-simulations/index.html
+
+* Install and start PricePublisher agent:
+
+The Price publisher agent reads a csv file with time based electric price information
+and publishes data an array of the last 24-hour prices.  Current implementation assumes that price 
+csv contains hourly price data.  Although the agent would work on sub-hourly 
+price information it does not include a timestamp in the message payload that 
+contains the array of prices, therefore the agent would need to be designed 
+to utilize price information as given or this agent would need to be extended 
+to include timestamp information as well as the price array.
+The yaml format of the config files are specified below. 
+
+Agent config file:
+
+```` yaml
+cron_schedule: '*/5 * * * *'
+price_file: /home/vuzer/transactivecontrol/MarketAgents/config/RTP/RTP-sept.csv
+````
+Install and start the energy plus agent using the following command:
+````
+python VOLTTRON_ROOT/scripts/install-agent.py \
+    -s transactivecontrol/MarketAgents/PricePublisher \
+    --config  transactivecontrol/MarketAgents/config/BRSW/price_pub.config \
+    --tag price_pub \
+    -i price_pub \
+    --force \
+    --start
+
+````
+* Install and start TCC agents:
+
+Install and start the TCC Agent using the script install-agent.py as describe below:
+
+```
+python VOLTTRON_ROOT/scripts/install-agent.py -s <top most folder of the agent> 
+                                -c <Agent config file>
+                                -i agent.AHU
+                                -t AHU
+                                --start --force
+```
+, where VOLTTRON_ROOT is the root of the source directory of VOLTTRON.
+
+-s : followed by path of top most folder of the AHU agent
+
+-c : followed by path of the agent config file
+
+-i : followed by agent identity
+
+-t : followed by name tag
+ 
+--start (optional): start after installation
+
+--force (optional): overwrites the existing agent

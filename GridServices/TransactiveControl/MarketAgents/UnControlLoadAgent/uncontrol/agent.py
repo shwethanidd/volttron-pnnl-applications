@@ -272,7 +272,7 @@ class UncontrolAgent(MarketAgent):
             self.demand_aggregation_working = self.demand_aggregation_master.copy()
             if len(self.market_name) > 1:
                 if self.current_hour is not None and current_hour != self.current_hour:
-                    self.q_uc[self.current_hour] = max(- mean(self.uc_load_array)*self.normalize_to_hour/60.0, 10.0)
+                    self.q_uc[self.current_hour] = max(mean(self.uc_load_array)*self.normalize_to_hour/60.0, 10.0)
                     _log.debug("Current hour uncontrollable load: {}".format(mean(self.uc_load_array)*self.normalize_to_hour/60.0))
                     self.uc_load_array = []
                     self.normalize_to_hour = 0
