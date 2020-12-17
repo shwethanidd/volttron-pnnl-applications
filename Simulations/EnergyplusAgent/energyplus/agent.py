@@ -74,7 +74,7 @@ from volttron.platform.agent import utils
 from volttron.platform.messaging import headers as headers_mod
 from volttron.platform.vip.agent import Agent, Core
 from datetime import timedelta as td
-
+from datetime import date
 
 
 monkey.patch_socket()
