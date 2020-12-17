@@ -23,10 +23,10 @@ class firstorderzone(object):
         self.coefficients = {"c1", "c2", "c3", "c4"}
         self.rated_power = config["rated_power"]
 
-        self.on = [0]*parent.market_number
-        self.off = [0]*parent.market_number
+        self.on = [0]
+        self.off = [0]
 
-        self.predict = self.getQ
+        self.predict_quantity = self.getQ
         self.smc_interval = parent.single_market_contol_interval
         self.get_input_value = parent.get_input_value
 
@@ -47,7 +47,26 @@ class firstorderzone(object):
         self.mclg = self.get_input_value(self.mclg_name)
         self.mhtg = self.get_input_value(self.mhtg_name)
         self.sfs = self.get_input_value(self.sfs_name)
-        self.zt_predictions = [self.zt] * parent.market_number
+        self.zt_predictions = [self.zt] * 24
+
+    def update_coefficients(self, coefficients):
+        if set(coefficients.keys()) != self.coefficients:
+            _log.warning("Missing required coefficient to update model")
+            _log.warning("Provided coefficients %s -- required %s",
+                         list(coefficients.keys()), self.coefficients)
+            return
+        self.c1 = coefficients["c1"]
+        self.c2 = coefficients["c2"]
+        self.c3 = coefficients["c3"]
+        self.c4 = coefficients["c4"]
+        message = {
+            "a1": self.c1,
+            "a2": self.c2,
+            "a3": self.c3,
+            "a4": self.c4
+        }
+        topic_suffix = "MODEL_COEFFICIENTS"
+        self.parent.publish_record(topic_suffix, message)
 
     def update_data(self):
         self.oat = self.get_input_value(self.oat_name)
@@ -68,20 +87,28 @@ class firstorderzone(object):
             self.on[0] = 0
         _log.debug("Update model data: oat: {} - zt: {} - mclg: {} - mhtg: {}".format(self.oat, self.zt, self.mclg, self.mhtg))
 
-    def update(self, _set, sched_index, market_index, occupied):
-        self.zt_predictions[market_index] = _set
+    def update(self, _set, market_time):
+        index = market_time.hour
+        self.zt_predictions[index] = _set
 
-    def predict(self, _set, sched_index, market_index, occupied):
-        if self.parent.market_number == 1:
+    def predict(self, _set, market_time, occupied, realtime=False):
+        index = market_time.hour
+        if realtime:
             oat = self.oat
             zt = self.zt
             occupied = self.sfs if self.sfs is not None else occupied
-            sched_index = self.parent.current_datetime.hour
         else:
-            zt = self.zt_predictions[market_index]
-            oat = self.parent.oat_predictions[market_index] if self.parent.oat_predictions else self.oat
-        q = self.predict_quantity(oat, zt, _set, sched_index)
-        _log.debug("{}: RTU predicted {} - zt: {} - set: {} - sched: {}".format(self.parent.agent_name, q, zt, _set, sched_index))
+            zt_index = index - 1 if index > 0 else 23
+            zt = self.zt_predictions[zt_index]
+            oat = self.get_input_value(self.oat_name)
+            if market_time is self.parent.oat_predictions:
+                oat = self.parent.oat_predictions[market_time]
+        q = 0.0
+        if oat is not None and zt is not None:
+            _log.debug("OAT: %s -- ZT: %s", oat, zt)
+            q = self.predict_quantity(oat, zt, _set, index)
+
+        _log.debug("{}: RTU predicted {} - zt: {} - set: {} - sched: {}".format(self.parent.agent_name, q, zt, _set, index))
         # might need to revisit this when doing both heating and cooling
         if occupied:
             q = clamp(q, min(self.parent.flexibility), max(self.parent.flexibility))
@@ -107,8 +134,8 @@ class rtuzone(object):
         self.on_min = config.get("on_min", 0)
         self.off_min = config.get("off_min", 0)
         self.tdb = config.get("temp_db", 0.5)
-        self.on = [0]*parent.market_number
-        self.off = [0]*parent.market_number
+        self.on = [0]*24
+        self.off = [0]*24
 
         self.predict = self.getQ
         self.parent.init_predictions = self.init_predictions
