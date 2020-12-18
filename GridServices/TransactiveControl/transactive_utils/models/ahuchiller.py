@@ -25,20 +25,23 @@ class ahuchiller(object):
         self.name = 'AhuChiller'
 
         self.has_economizer = equipment_conf["has_economizer"]
-        self.economizer_limit = equipment_conf["economizer_limit"]
+        if self.has_economizer:
+            self.economizer_limit = equipment_conf["economizer_limit"]
+        else:
+            self.economizer_limit = 0
         self.min_oaf = equipment_conf.get("minimum_oaf", 0.15)
-        self.vav_flag = equipment_conf.get("variable-volume", True)
-        self.sat_setpoint = equipment_conf["supply-air sepoint"]
-        self.building_chiller = equipment_conf["building chiller"]
-        self.tset_avg = equipment_conf["nominal zone-setpoint"]
+        self.vav_flag = equipment_conf.get("variable_volume", True)
+        self.sat_setpoint = equipment_conf["supply_air_setpoint"]
+        self.building_chiller = equipment_conf["building_chiller"]
+        self.tset_avg = equipment_conf["nominal_zone_setpoint"]
         self.tDis = self.sat_setpoint
         self.parent.supply_commodity = "ZoneAirFlow"
 
         self.fan_power = 0.
-        self.mDotAir = 0.
         self.coil_load = 0.
 
         self.get_input_value = parent.get_input_value
+        self.smc_interval = parent.single_market_contol_interval
         self.parent = parent
         self.sfs_name = data_names.SFS
         self.mat_name = data_names.MAT
@@ -68,6 +71,7 @@ class ahuchiller(object):
         else:
             self.tDis = q_load
             self.dat = q_load
+            self.mDotAir = self.saf
 
     def calculate_fan_power(self):
         if self.power_unit == 'W':
@@ -93,30 +97,27 @@ class ahuchiller(object):
         else:
             self.coil_load = coil_load
 
-    def calculate_load(self, q_load, oat, realtime):
-        _log.debug("AHU model - load input: %s -- oat: %s -- realtime market: %s", q_load, oat, realtime)
+    def calculate_load(self, q_load, oat):
         self.input_zone_load(q_load)
-        return self.calculate_total_power(oat, realtime)
+        return self.calculate_total_power(oat)
 
     def single_market_coil_load(self):
         try:
             self.coil_load = self.mDotAir * self.cpAir * (self.dat - self.mat)
+            _log.debug("AHU MODEL - load: %s -- mdot: %s -- mat: %s -- dat: %s", self.coil_load, self.mDotAir, self.mat, self.dat)
         except:
             _log.debug("AHU for single market requires dat and mat measurements!")
             self.coil_load = 0.
 
-    def calculate_total_power(self, oat, realtime):
+    def calculate_total_power(self, oat):
         self.calculate_fan_power()
         oat = oat if oat is not None else self.oat
-        if self.building_chiller:
-            if realtime:
+        if self.building_chiller and oat is not None:
+            if self.smc_interval is not None:
                 self.single_market_coil_load()
-            elif oat is not None:
-                self.calculate_coil_load(oat)
             else:
-                _log.debug("AHUChiller no OAT measurment!")
-                self.coil_load = 0.0
+                self.calculate_coil_load(oat)
         else:
-            _log.debug("AHUChiller building does not have chiller!")
+            _log.debug("AHUChiller building does not have chiller or no oat!")
             self.coil_load = 0.0
         return abs(self.coil_load)/self.cop/0.9 + max(self.fan_power, 0)
