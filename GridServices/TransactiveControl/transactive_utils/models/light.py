@@ -1,8 +1,7 @@
 import logging
 
 from volttron.platform.agent import utils
-import volttron.pnnl.models.input_names as data_names
-from volttron.pnnl.models.utils import clamp
+import transactive_utils.models.input_names as data_names
 
 _log = logging.getLogger(__name__)
 utils.setup_logging()
@@ -17,7 +16,7 @@ class simple(object):
     def update_data(self):
         pass
 
-    def predict(self, _set, sched_index, market_index, occupied):
+    def predict(self, _set, market_time, occupied, realtime=False):
         return _set*self.rated_power
 
 
@@ -35,9 +34,10 @@ class simple_profile(object):
     def update_data(self):
         pass
 
-    def predict(self, _set, sched_index, market_index, occupied):
+    def predict(self, _set, market_time, occupied, realtime=False):
+        index = market_time.hour
         if not occupied:
-            power = self.lighting_schedule[sched_index]*self.rated_power
+            power = self.lighting_schedule[index]*self.rated_power
         else:
             power = _set*self.rated_power
         return power

@@ -61,7 +61,7 @@ class Market(object):
             return False
         _start = current_schedule["start"]
         _end = current_schedule["end"]
-        if _start < dt.time() < _end:
+        if _start <= dt.time() < _end:
             return True
         else:
             return False

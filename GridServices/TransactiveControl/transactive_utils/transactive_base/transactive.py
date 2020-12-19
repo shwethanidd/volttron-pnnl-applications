@@ -257,6 +257,8 @@ class TransactiveBase(MarketAgent, Model):
             else:
                 release_value = None
             off_setpoint = output_info.get("off_setpoint", value)
+            # TODO: this assumes single output.  Need to adjust this when multiple outputs are implemented
+            self.off_setpoint = off_setpoint
             self.outputs[mapped] = {
                 "point": point,
                 "topic": topic,
