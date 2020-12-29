@@ -59,6 +59,7 @@ class firstorderzone(object):
         pass
 
     def update(self, _set, market_time):
+        _log.debug("update_state: {} - {} - {}".format(_set, market_time, self.zt_predictions))
         index = market_time.hour
         self.zt_predictions[index] = _set
 

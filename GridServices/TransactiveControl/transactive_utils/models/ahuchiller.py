@@ -38,6 +38,7 @@ class ahuchiller(object):
         self.parent.supply_commodity = "ZoneAirFlow"
 
         self.fan_power = 0.
+        self.mDotAir = 0.
         self.coil_load = 0.
 
         self.get_input_value = parent.get_input_value
@@ -97,27 +98,30 @@ class ahuchiller(object):
         else:
             self.coil_load = coil_load
 
-    def calculate_load(self, q_load, oat):
+    def calculate_load(self, q_load, oat, realtime):
+        _log.debug("AHU model - load input: %s -- oat: %s -- realtime market: %s", q_load, oat, realtime)
         self.input_zone_load(q_load)
-        return self.calculate_total_power(oat)
+        return self.calculate_total_power(oat, realtime)
 
     def single_market_coil_load(self):
         try:
             self.coil_load = self.mDotAir * self.cpAir * (self.dat - self.mat)
-            _log.debug("AHU MODEL - load: %s -- mdot: %s -- mat: %s -- dat: %s", self.coil_load, self.mDotAir, self.mat, self.dat)
         except:
             _log.debug("AHU for single market requires dat and mat measurements!")
             self.coil_load = 0.
 
-    def calculate_total_power(self, oat):
+    def calculate_total_power(self, oat, realtime):
         self.calculate_fan_power()
         oat = oat if oat is not None else self.oat
-        if self.building_chiller and oat is not None:
-            if self.smc_interval is not None:
+        if self.building_chiller:
+            if realtime:
                 self.single_market_coil_load()
-            else:
+            elif oat is not None:
                 self.calculate_coil_load(oat)
+            else:
+                _log.debug("AHUChiller no OAT measurment!")
+                self.coil_load = 0.0
         else:
-            _log.debug("AHUChiller building does not have chiller or no oat!")
+            _log.debug("AHUChiller building does not have chiller!")
             self.coil_load = 0.0
         return abs(self.coil_load)/self.cop/0.9 + max(self.fan_power, 0)

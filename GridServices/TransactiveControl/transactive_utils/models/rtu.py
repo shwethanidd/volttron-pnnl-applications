@@ -88,6 +88,7 @@ class firstorderzone(object):
         _log.debug("Update model data: oat: {} - zt: {} - mclg: {} - mhtg: {}".format(self.oat, self.zt, self.mclg, self.mhtg))
 
     def update(self, _set, market_time):
+        _log.debug("update_state: {} - {} - {}".format(_set, market_time, self.zt_predictions))
         index = market_time.hour
         self.zt_predictions[index] = _set
 
