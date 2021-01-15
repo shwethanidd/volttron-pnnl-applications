@@ -58,107 +58,91 @@
 
 import sys
 import logging
+from dateutil.parser import parse
 import dateutil.tz
-from dateutil import parser
+import types
+import gevent
 from sympy import symbols
 from sympy.parsing.sympy_parser import parse_expr
-from volttron.platform.vip.agent import Agent, Core
+from datetime import datetime as dt
+from datetime import timedelta as td
 from volttron.platform.agent import utils
-from volttron.platform.agent.math_utils import mean, stdev
+from transactive_utils.transactive_base.transactive import TransactiveBase
 from volttron.platform.messaging import topics, headers as headers_mod
-from volttron.platform.agent.base_market_agent import MarketAgent
 from volttron.platform.agent.base_market_agent.poly_line import PolyLine
 from volttron.platform.agent.base_market_agent.point import Point
-from volttron.platform.agent.base_market_agent.buy_sell import SELLER
-from volttron.platform.agent.base_market_agent.buy_sell import BUYER
+from volttron.platform.agent.math_utils import mean, stdev
+
+#from decorators import time_cls_methods
 
 _log = logging.getLogger(__name__)
 utils.setup_logging()
-__version__ = "0.1"
-TIMEZONE = "US/Pacific"
+__version__ = '0.3'
 
 
-def uncontrol_agent(config_path, **kwargs):
-    """Parses the uncontrollable load agent configuration and returns an instance of
-    the agent created using that configuration.
-
-    :param config_path: Path to a configuration file.
-
-    :type config_path: str
-    :returns: Market Service Agent
-    :rtype: MarketServiceAgent
+class UncontrolLoadAgent(TransactiveBase):
+    """
+    The SampleElectricMeterAgent serves as a sample of an electric meter that
+    sells electricity for a single building at a fixed price.
     """
 
-    _log.debug("Starting the uncontrol agent")
-    try:
-        config = utils.load_config(config_path)
-    except StandardError:
-        config = {}
-
-    if not config:
-        _log.info("Using defaults for starting configuration.")
-    agent_name = config.get("agent_name", "uncontrol")
-    base_name = config.get('market_name', 'electric')
-    market_name = []
-    q_uc = []
-    price_multiplier = config.get('price_multiplier', 2.0)
-    default_min_price = config.get('default_min_price', 0.01)
-    default_max_price = config.get('default_min_price', 100.0)
-    for i in range(24):
-        market_name.append('_'.join([base_name, str(i)]))
-        q_uc.append(float(config.get("power_" + str(i), 0)))
-
-    verbose_logging = config.get('verbose_logging', True)
-    building_topic = topics.DEVICES_VALUE(campus=config.get("campus", ""),
-                                          building=config.get("building", ""),
-                                          unit=None,
-                                          path="",
-                                          point="all")
-    devices = config.get("devices")
-    record_topic = '/'.join(["tnc", config.get("campus", ""), config.get("building", "")])
-    sim_flag = config.get("sim_flag", False)
-    return UncontrolAgent(agent_name, market_name, verbose_logging, q_uc, building_topic, devices,
-                          price_multiplier, default_min_price, default_max_price, sim_flag, record_topic, **kwargs)
-
-
-class UncontrolAgent(MarketAgent):
-    def __init__(self, agent_name, market_name, verbose_logging, q_uc, building_topic, devices,
-                 price_multiplier, default_min_price, default_max_price, sim_flag, record_topic, **kwargs):
-        super(UncontrolAgent, self).__init__(verbose_logging, **kwargs)
-        self.market_name = market_name
-        self.q_uc = q_uc
-        self.price_index = 0
-        self.price_multiplier = price_multiplier
-        self.default_max_price = default_max_price
-        self.default_min_price = default_min_price
-        self.infinity = 1000000
+    def __init__(self, config_path, **kwargs):
+        try:
+            config = utils.load_config(config_path)
+        except StandardError:
+            config = {}
+        self.agent_name = config.get("agent_name", "vav")
         self.current_hour = None
         self.power_aggregation = []
         self.current_power = None
-        self.sim_flag = sim_flag
+        self.sim_flag = config.get("sim_flag", True)
+        self.building_topic = topics.DEVICES_VALUE(campus=config.get("campus", ""),
+                                                   building=config.get("building", ""),
+                                                   unit=None,
+                                                   path="",
+                                                   point="all")
         self.demand_aggregation_master = {}
         self.demand_aggregation_working = {}
-        self.agent_name = agent_name
+        self.agent_name = "uncontrol_load"
         self.uc_load_array = []
         self.prices = []
         self.normalize_to_hour = 0.
-        self.record_topic = record_topic
+        q_uc = []
+        for i in range(24):
+            q_uc.append(float(config.get("power_" + str(i), 0)))
+        self.q_uc = q_uc
         self.current_datetime = None
-        for market in self.market_name:
-            self.join_market(market, BUYER, None, self.offer_callback,
-                             None, self.price_callback, self.error_callback)
+        self.devices = config.get("devices", {})
+        TransactiveBase.__init__(self, config, **kwargs)
 
-        self.building_topic = building_topic
-        self.devices = devices
-
-    @Core.receiver('onstart')
-    def setup(self, sender, **kwargs):
+    def setup(self):
         """
         Set up subscriptions for demand limiting case.
         :param sender:
         :param kwargs:
         :return:
         """
+        for market in self.market_manager_list:
+            market.offer_callback = self.offer_callback
+            market.create_demand_curve = self.create_demand_curve
+            market.init_markets()
+
+        if self.market_type == "rtp":
+            self.update_prices = self.price_manager.update_rtp_prices
+        else:
+            self.update_prices = self.price_manager.update_prices
+
+        self.vip.pubsub.subscribe(peer='pubsub',
+                                  prefix='mixmarket/start_new_cycle',
+                                  callback=self.update_prices)
+        self.vip.pubsub.subscribe(peer='pubsub',
+                                  prefix='tnc/cleared_prices',
+                                  callback=self.price_manager.update_cleared_prices)
+        self.vip.pubsub.subscribe(peer='pubsub',
+                                  prefix="/".join([self.record_topic,
+                                                   "update_model"]),
+                                  callback=self.update_model)
+
         for device, points in self.devices.items():
             device_topic = self.building_topic(unit=device)
             _log.debug('Subscribing to {}'.format(device_topic))
@@ -166,41 +150,57 @@ class UncontrolAgent(MarketAgent):
             self.vip.pubsub.subscribe(peer='pubsub',
                                       prefix=device_topic,
                                       callback=self.aggregate_power)
-        self.vip.pubsub.subscribe(peer='pubsub',
-                                  prefix='mixmarket/start_new_cycle',
-                                  callback=self.get_prices)
-
-        self.demand_aggregation_working = self.demand_aggregation_master.copy()
-        _log.debug('Points are  {}'.format(self.demand_aggregation_working))
-
-    def get_prices(self, peer, sender, bus, topic, headers, message):
-        _log.debug("Get prices prior to market start.")
-
-        # Store received prices so we can use it later when doing clearing process
-        self.prices = message['prices']  # Array of price
 
     def offer_callback(self, timestamp, market_name, buyer_seller):
-        index = self.market_name.index(market_name)
-        load_index = self.determine_load_index(index)
-        demand_curve = self.create_demand_curve(load_index, index)
-        result, message = self.make_offer(market_name, buyer_seller, demand_curve)
-
-        _log.debug("{}: result of the make offer {} at {}".format(self.agent_name,
-                                                                  result,
-                                                                  timestamp))
-
-    def conversion_handler(self, conversion, points, point_list):
-        expr = parse_expr(conversion)
-        sym = symbols(points)
-        return float(expr.subs(point_list))
-
-    def determine_load_index(self, index):
-        if self.current_hour is None:
-            return index
-        elif index + self.current_hour + 1 < 24:
-            return self.current_hour + index + 1
+        market_time = None
+        for market in self.market_manager_list:
+            if market_name in market.market_intervals:
+                market_time = market.market_intervals[market_name]
+                market_cls = market
+                break
+        if market_time is not None:
+            demand_curve = self.create_demand_curve(market_name, parse(market_time))
+            market_cls.demand_curve[market_time] = demand_curve
+            result, message = self.make_offer(market_name, buyer_seller, demand_curve)
         else:
-            return self.current_hour + index + 1 - 24
+            _log.debug("Could not find market time during offer callback!")
+
+    def create_demand_curve(self, market_name, market_time):
+        """
+        Create demand curve.  market_index (0-23) where next hour is 0
+        (or for single market 0 for next market).  sched_index (0-23) is hour
+        of day corresponding to market that demand_curve is being created.
+        :param market_index: int; current market index where 0 is the next hour.
+        :param sched_index: int; 0-23 corresponding to hour of day
+        :param occupied: bool; true if occupied
+        :return:
+        """
+        _log.debug("%s create_demand_curve - market_name: %s - market_time: %s",
+                   self.core.identity,  market_name, market_time)
+        demand_curve = PolyLine()
+        prices = self.price_manager.get_price_array(market_time)
+        i = 0
+        for price in prices:
+            q = self.q_uc[market_time.hour]
+            demand_curve.add(Point(price=price, quantity=q))
+
+        topic_suffix = "DemandCurve"
+        message = {
+            "MarketTime": str(market_time),
+            "MarketName": market_name,
+            "Curve": demand_curve.tuppleize(),
+            "Commodity": "electricity"
+        }
+        _log.debug("%s debug demand_curve - curve: %s",
+                   self.core.identity, demand_curve.points)
+        self.publish_record(topic_suffix, message)
+        return demand_curve
+
+    def init_predictions(self, output_info):
+        pass
+
+    def update_state(self, market_time, market_index, occupied, price, prices):
+        pass
 
     def aggregate_power(self, peer, sender, bus, topic, headers, message):
         """
@@ -216,14 +216,12 @@ class UncontrolAgent(MarketAgent):
         _log.debug("{}: received topic for power aggregation: {}".format(self.agent_name, topic))
         data = message[0]
         if not self.sim_flag:
-            current_time = parser.parse(headers["Date"])
-            to_zone = dateutil.tz.gettz(TIMEZONE)
-            current_time = current_time.astimezone(to_zone)
+            current_time = parse(headers["Date"])
+            current_time = current_time.astimezone(self.input_data_tz)
         else:
-            current_time = parser.parse(headers["Date"])
+            current_time = parse(headers["Date"])
         self.current_datetime = current_time
         current_hour = current_time.hour
-
         try:
             current_points = self.demand_aggregation_working.pop(topic)
         except KeyError:
@@ -256,71 +254,22 @@ class UncontrolAgent(MarketAgent):
             self.demand_aggregation_working = self.demand_aggregation_master.copy()
 
             if self.current_hour is not None and current_hour != self.current_hour:
-                self.q_uc[self.current_hour] = max(- mean(self.uc_load_array)*self.normalize_to_hour/60.0, 10.0)
+                self.q_uc[self.current_hour] = max(-mean(self.uc_load_array)*self.normalize_to_hour/60.0, 10.0)
                 _log.debug("Current hour uncontrollable load: {}".format(mean(self.uc_load_array)*self.normalize_to_hour/60.0))
                 self.uc_load_array = []
                 self.normalize_to_hour = 0
 
             self.current_hour = current_hour
 
-    def create_demand_curve(self, load_index, index):
-        demand_curve = PolyLine()
-        price_min, price_max = self.determine_prices()
-        try:
-            qMin = self.q_uc[load_index]
-            qMax = self.q_uc[load_index]
-            demand_curve.add(Point(price=max(price_min, price_max), quantity=min(qMin, qMax)))
-            demand_curve.add(Point(price=min(price_min, price_max), quantity=max(qMin, qMax)))
-        except:
-            demand_curve.add(Point(price=max(price_min, price_max), quantity=0.1))
-            demand_curve.add(Point(price=min(price_min, price_max), quantity=0.1))
-        topic_suffix = "/".join([self.agent_name, "DemandCurve"])
-        message = {"MarketIndex": index, "Curve": demand_curve.tuppleize(), "Commodity": "Electric"}
-        self.publish_record(topic_suffix, message)
-        _log.debug("{} debug demand_curve - curve: {}".format(self.agent_name, demand_curve.points))
-        return demand_curve
-
-    def determine_prices(self):
-        try:
-            if self.prices:
-                avg_price = mean(self.prices)
-                std_price = stdev(self.prices)
-                price_min = avg_price - self.price_multiplier * std_price
-                price_max = avg_price + self.price_multiplier * std_price
-            else:
-                price_min = self.default_min_price
-                price_max = self.default_max_price
-        except:
-            price_min = self.default_min_price
-            price_max = self.default_max_price
-        return price_min, price_max
-
-    def price_callback(self, timestamp, market_name, buyer_seller, price, quantity):
-        _log.debug("{}: cleared price ({}, {}) for {} as {} at {}".format(self.agent_name,
-                                                                          price,
-                                                                          quantity,
-                                                                          market_name,
-                                                                          buyer_seller,
-                                                                          timestamp))
-        index = self.market_name.index(market_name)
-
-    def error_callback(self, timestamp, market_name, buyer_seller, error_code, error_message, aux):
-        _log.debug("{}: error for {} as {} at {} - Message: {}".format(self.agent_name,
-                                                                       market_name,
-                                                                       buyer_seller,
-                                                                       timestamp,
-                                                                       error_message))
-
-    def publish_record(self, topic_suffix, message):
-        headers = {headers_mod.DATE: utils.format_timestamp(utils.get_aware_utc_now())}
-        message["TimeStamp"] = utils.format_timestamp(self.current_datetime)
-        topic = "/".join([self.record_topic, topic_suffix])
-        self.vip.pubsub.publish("pubsub", topic, headers, message).get()
+    def conversion_handler(self, conversion, points, point_list):
+        expr = parse_expr(conversion)
+        sym = symbols(points)
+        return float(expr.subs(point_list))
 
 
 def main():
     """Main method called to start the agent."""
-    utils.vip_main(uncontrol_agent, version=__version__)
+    utils.vip_main(UncontrolLoadAgent, version=__version__)
 
 
 if __name__ == '__main__':
