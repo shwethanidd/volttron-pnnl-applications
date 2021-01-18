@@ -1821,13 +1821,11 @@ class Neighbor(object):
         return vertices
 
     def getDict(self):
+        scheduled_powers = [(x.timeInterval.name, x.value) for x in self.scheduledPowers]
         neighbor_dict = {
-            "convergenceThreshold": self.convergenceThreshold,
-            "description": self.description,
-            "effectiveImpedance": self.effectiveImpedance,
-            "friend": self.friend,
             "isTransactive": self.transactive,
-            "name": self.name
+            "name": self.name,
+            "scheduled_power": scheduled_powers
         }
 
         return neighbor_dict

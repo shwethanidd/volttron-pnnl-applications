@@ -859,16 +859,13 @@ class LocalAsset(object):
         self.totalDualCost = sum([x.value for x in self.dualCosts])
 
     def getDict(self):
+        scheduled_powers = [(x.timeInterval.name, x.value) for x in self.scheduledPowers]
+
         local_asset_dict = {
             "name": self.name,
-            "description": self.description,
-            "transitionCosts": self.transitionCosts,
-            "location": self.location,
-            # "costParameters": list(self.costParameters),
-            "defaultPower": self.defaultPower,
-            #"defaultVertices": self.defaultVertices,
-            "engagementCost": self.engagementCost,
-            "maximumPower": self.maximumPower,
-            "minimumPower": self.minimumPower
+            "scheduled_power": scheduled_powers
+            #"defaultPower": self.defaultPower,
+            #"maximumPower": self.maximumPower,
+            #"minimumPower": self.minimumPower
         }
         return local_asset_dict
