@@ -1248,7 +1248,7 @@ class Market(object):
 
         # Index through active time intervals ti
         for time_interval in self.timeIntervals:
-            _log.info("ACTIVE Time intervals {}".format(time_interval.startTime))
+            #_log.info("ACTIVE Time intervals {}".format(time_interval.startTime))
             # Initialize the marginal price.
             marginal_price = None
 
@@ -1268,15 +1268,15 @@ class Market(object):
                         and self.priorMarketInSeries is not None \
                         and self.intervalsToClear > 1 \
                         and marginal_price is None:
-                    _log.debug("Market name: {}, check_marginal_price: Method 2".format(self.name))
+                    #_log.debug("Market name: {}, check_marginal_price: Method 2".format(self.name))
                     # Look for only the market just prior to this one, based on its market clearing time.
                     prior_market_in_series = self.priorMarketInSeries
 
                     # Gather the marginal prices from the most recent similar market.
                     prior_marginal_prices = prior_market_in_series.marginalPrices
 
-                    _log.debug("Market name: {}, len(prior_marginal_prices): {} Method 2".format(self.name,
-                                                                                              len(prior_marginal_prices)))
+                    #_log.debug("Market name: {}, len(prior_marginal_prices): {} Method 2".format(self.name,
+                    #                                                                          len(prior_marginal_prices)))
                     # If a valid marginal price is found in the most recent market,
                     # 200902DJH: This next if statement is problematic because, if false, the elif logic is not used as
                     # it should be. The fix is to use if statements without elif with continue commands after any valid

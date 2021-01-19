@@ -464,57 +464,25 @@ class Auction(Market):
         transactive_operation['demand'] = dict()
         transactive_operation['demand']['bid'] = dict()
         transactive_operation['demand']['actual'] = dict()
-        transactive_operation['demand']['actual']['upstream'] = dict()
-        transactive_operation['demand']['actual']['downstream'] = dict()
+        transactive_operation['demand']['actual']['neighbor'] = dict()
         transactive_operation['demand']['actual']['assets'] = dict()
 
         _log.debug("AUCTION: BEFORE: info: {}".format(transactive_operation))
         for idx, p in enumerate(self.marginalPrices):
-            transactive_operation['prices'].append(p.value)
+            transactive_operation['prices'].append((p.timeInterval.startTime, p.value))
 
         for neighbor in my_transactive_node.neighbors:
-            if neighbor.upOrDown == Direction.upstream:
-                records = list()
-                _log.debug("AUCTION: neighbor.mySignal length:{}".format(len(neighbor.mySignal)))
-                for rec in neighbor.mySignal:
-                    records.append(rec.getDict())
-                transactive_operation['demand']['bid'][neighbor.name] = records
+            transactive_operation['demand']['bid'][neighbor.name] = neighbor.getDict()['sent_signal']
 
         if self.name.startswith('Real-Time'):
             for neighbor in my_transactive_node.neighbors:
-                if neighbor.upOrDown == Direction.upstream:
-                    transactive_operation['demand']['actual']['upstream'][neighbor.name] = neighbor.getDict()
-                else:
-                    transactive_operation['demand']['actual']['downstream'][neighbor.name] = neighbor.getDict()
+                transactive_operation['demand']['actual']['neighbor'][neighbor.name] = \
+                    neighbor.getDict()['received_signal']
             for asset in my_transactive_node.localAssets:
-                transactive_operation['demand']['actual']['assets'][asset.name] = asset.getDict()
+                transactive_operation['demand']['actual']['assets'][asset.name] = asset.getDict()['vertices']
 
         topic = "{}/{}".format(my_transactive_node.transactive_operation_topic, self.name)
         # my_transactive_node.vip.pubsub.publish(peer='pubsub', topic=topic,
         #                                        headers=headers, message=transactive_operation)
-
         _log.debug("AUCTION: Publishing on market topic: {} and info: {}".format(topic, transactive_operation))
 
-        # for agt in upstream_agents:
-        #     topic = "{}/{}".format(my_transactive_node.neighbor_topic, agt.name)
-        #
-        #     msg = agt.getDict()
-        #
-        #     headers = {headers_mod.DATE: format_timestamp(Timer.get_cur_time())}
-        #     #_log.debug("AUCTION: Publishing on Upstream agent topic: {} and info: {}".format(topic,
-        #     #                                                                              msg))
-        #     my_transactive_node.vip.pubsub.publish(peer='pubsub', topic=topic,
-        #                                            headers=headers, message=msg)
-        #
-        # for agt in downstream_agents:
-        #     topic = "{}/{}".format(my_transactive_node.neighbor_topic, agt.name)
-        #     msg = agt.getDict()
-        #     headers = {headers_mod.DATE: format_timestamp(Timer.get_cur_time())}
-        #     #_log.debug("AUCTION: Publishing on Downstream agent topic: {} and info: {}".format(topic,
-        #     #                                                                              msg))
-        #     my_transactive_node.vip.pubsub.publish(peer='pubsub', topic=topic,
-        #                                            headers=headers, message=msg)
-        #
-        # my_transactive_node.vip.pubsub.publish("pubsub", my_transactive_node.market_topic, headers, msg)
-        #_log.debug("AUCTION: Publishing on market topic: {} and info: {}".format(
-        #    my_transactive_node.market_topic, msg))

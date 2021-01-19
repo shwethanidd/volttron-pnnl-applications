@@ -651,12 +651,15 @@ class LocalAsset(object):
         # Gather active time intervals.
         time_intervals = market.timeIntervals  # active TimeIntervals
 
+        '''
         for power in self.scheduledPowers:
             _log.debug("update_vertices Market {}, time interval: {}, power value: {} ".format(power.market.name,
                                                                                               power.timeInterval.startTime,
                                                                                               power.value))
         _log.debug("update_vertices Market: {}, scheduled powers: {}".format(market.name,
                                                                             self.scheduledPowers))
+        '''
+
         # Index through active time intervals.
         for i in range(len(time_intervals)):
 
@@ -859,13 +862,11 @@ class LocalAsset(object):
         self.totalDualCost = sum([x.value for x in self.dualCosts])
 
     def getDict(self):
-        scheduled_powers = [(x.timeInterval.name, x.value) for x in self.scheduledPowers]
-
+        scheduled_powers = [(x.timeInterval.startTime, x.value) for x in self.scheduledPowers]
+        vertices = [(x.timeInterval.startTime, x.value.marginalPrice, x.value.power) for x in self.activeVertices]
         local_asset_dict = {
             "name": self.name,
-            "scheduled_power": scheduled_powers
-            #"defaultPower": self.defaultPower,
-            #"maximumPower": self.maximumPower,
-            #"minimumPower": self.minimumPower
+            "scheduled_power": scheduled_powers,
+            "vertices": vertices
         }
         return local_asset_dict

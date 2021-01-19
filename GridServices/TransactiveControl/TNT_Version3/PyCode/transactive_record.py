@@ -113,8 +113,7 @@ class TransactiveRecord(object):
         transactive_record_dict = {
             "timeInterval": self.timeInterval,
             "marginalPrice": self.marginalPrice,
-            "power": self.power,
-            "cost": self.cost
+            "power": self.power
         }
 
         return transactive_record_dict

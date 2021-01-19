@@ -1821,14 +1821,19 @@ class Neighbor(object):
         return vertices
 
     def getDict(self):
-        scheduled_powers = [(x.timeInterval.name, x.value) for x in self.scheduledPowers]
+        scheduled_powers = [(x.timeInterval.startTime, x.value) for x in self.scheduledPowers]
+        received_signal = [(x.timeInterval.startTime, x.marginalPrice, x.power) for x in self.receivedSignal]
+        sent_signal = [(x.timeInterval.startTime, x.marginalPrice, x.power) for x in self.sentSignal]
         neighbor_dict = {
             "isTransactive": self.transactive,
             "name": self.name,
-            "scheduled_power": scheduled_powers
+            "scheduled_power": scheduled_powers,
+            "received_signal": received_signal,
+            "sent_signal": sent_signal
         }
 
         return neighbor_dict
+
 
 if __name__ == '__main__':
     nm = Neighbor()
