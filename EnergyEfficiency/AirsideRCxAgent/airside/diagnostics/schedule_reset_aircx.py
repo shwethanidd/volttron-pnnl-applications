@@ -285,10 +285,8 @@ class SchedResetAIRCx(object):
         if 64.2 not in list(diagnostic_msg.values()):
             for _hour in range(24):
                 diagnostic_msg = {}
-                utc_offset = self.timestamp_array[0].isoformat()[-6:]
-                push_time = self.timestamp_array[0].date()
-                push_time = datetime.combine(push_time, datetime.min.time())
-                push_time = push_time.replace(hour=_hour)
+                start_analysis_time = self.timestamp_array[0]
+                push_time = start_analysis_time.replace(hour=_hour, minute=0, second=0, microsecond=0)
                 for key, unocc_time_thr in self.unocc_time_thr.items():
                     diagnostic_msg.update({key: 60.0})
                     if hourly_counter[_hour] > unocc_time_thr:
