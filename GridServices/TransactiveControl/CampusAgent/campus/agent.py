@@ -125,7 +125,6 @@ class CampusAgent(Agent, TransactiveNode):
         self.local_asset_topic = "{}/{}/local_assets".format(self.db_topic, self.name)
         self.neighbor_topic = "{}/{}/neighbors".format(self.db_topic, self.name)
         self.transactive_record_topic = "{}/{}/transactive_record".format(self.db_topic, self.name)
-        self.transactive_operation_topic = "{}/{}/transactive_operation".format(self.db_topic, self.name)
         self.market_topic = "{}/{}/market".format(self.db_topic, self.name)
         self.market_balanced_price_topic = "{}/{}/market_balanced_prices".format(self.db_topic, self.name)
 

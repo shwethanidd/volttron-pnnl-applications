@@ -866,7 +866,14 @@ class LocalAsset(object):
         vertices = [(x.timeInterval.startTime, x.value.marginalPrice, x.value.power) for x in self.activeVertices]
         local_asset_dict = {
             "name": self.name,
-            "scheduled_power": scheduled_powers,
-            "vertices": vertices
+            "description": self.description,
+            "transitionCosts": self.transitionCosts,
+            "location": self.location,
+            # "costParameters": list(self.costParameters),
+            "defaultPower": self.defaultPower,
+            #"defaultVertices": self.defaultVertices,
+            "engagementCost": self.engagementCost,
+            "maximumPower": self.maximumPower,
+            "minimumPower": self.minimumPower
         }
         return local_asset_dict
