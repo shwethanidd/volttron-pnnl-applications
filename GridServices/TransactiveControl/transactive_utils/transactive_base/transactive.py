@@ -134,7 +134,7 @@ class TransactiveBase(MarketAgent, Model):
             else:
                 self.actuate_topic = actuate_topic
 
-            input_data_tz = config.get("input_data_timezone")
+            input_data_tz = config.get("input_data_timezone", "US/Pacific")
             self.input_data_tz = dateutil.tz.gettz(input_data_tz)
             inputs = config.get("inputs", [])
             schedule = config.get("schedule")
@@ -142,7 +142,7 @@ class TransactiveBase(MarketAgent, Model):
             self.input_topics = set()
             self.init_inputs(inputs)
             self.init_schedule(schedule)
-            outputs = config.get("outputs")
+            outputs = config.get("outputs", [])
             self.init_outputs(outputs)
             self.init_actuation_state(self.actuate_topic, self.actuate_onstart)
             self.init_input_subscriptions()
@@ -618,6 +618,14 @@ class MessageManager(object):
         for market_time in market_intervals:
             hour_of_year = calculate_hour_of_year(market_time)
             self.cleared_prices[hour_of_year] = cleared_prices[market_time]
+        if correction_market and market_intervals:
+            market_time = market_intervals[0]
+            current_datetime = self.parent.get_current_datetime()
+            market_time = parse(market_time) if isinstance(market_time, str) else market_time
+            market_time = market_time.astimezone(self.parent.input_data_tz)
+            _log.debug("CORRECTION: {} -- {}".format(current_datetime, market_time))
+            if current_datetime >= market_time:
+                self.parent.do_actuation()
         self.prune_data()
 
     def update_rtp_prices(self, peer, sender, bus, topic, headers, message):
@@ -675,5 +683,5 @@ class MessageManager(object):
             price_array = self.price_info[hour_of_year]
         else:
             _log.debug("No price array for current hour!")
-            price_array = None
+            price_array = []
         return price_array

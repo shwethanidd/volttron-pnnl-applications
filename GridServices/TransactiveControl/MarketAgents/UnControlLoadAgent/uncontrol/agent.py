@@ -91,7 +91,7 @@ class UncontrolLoadAgent(TransactiveBase):
             config = utils.load_config(config_path)
         except StandardError:
             config = {}
-        self.agent_name = config.get("agent_name", "vav")
+        self.agent_name = config.get("agent_name", "uncontrol")
         self.current_hour = None
         self.power_aggregation = []
         self.current_power = None
@@ -105,6 +105,7 @@ class UncontrolLoadAgent(TransactiveBase):
         self.demand_aggregation_working = {}
         self.agent_name = "uncontrol_load"
         self.uc_load_array = []
+        self.rt_power = {}
         self.prices = []
         self.normalize_to_hour = 0.
         q_uc = []
@@ -113,6 +114,7 @@ class UncontrolLoadAgent(TransactiveBase):
         self.q_uc = q_uc
         self.current_datetime = None
         self.devices = config.get("devices", {})
+        self.realtime_interval = config.get("realtime_interval", 15)
         TransactiveBase.__init__(self, config, **kwargs)
 
     def setup(self):
@@ -159,13 +161,13 @@ class UncontrolLoadAgent(TransactiveBase):
                 market_cls = market
                 break
         if market_time is not None:
-            demand_curve = self.create_demand_curve(market_name, parse(market_time))
+            demand_curve = self.create_demand_curve(market_name, parse(market_time), realtime=self.price_manager.correction_market)
             market_cls.demand_curve[market_time] = demand_curve
             result, message = self.make_offer(market_name, buyer_seller, demand_curve)
         else:
             _log.debug("Could not find market time during offer callback!")
 
-    def create_demand_curve(self, market_name, market_time):
+    def create_demand_curve(self, market_name, market_time, realtime=False):
         """
         Create demand curve.  market_index (0-23) where next hour is 0
         (or for single market 0 for next market).  sched_index (0-23) is hour
@@ -179,9 +181,11 @@ class UncontrolLoadAgent(TransactiveBase):
                    self.core.identity,  market_name, market_time)
         demand_curve = PolyLine()
         prices = self.price_manager.get_price_array(market_time)
-        i = 0
-        for price in prices:
+        if self.price_manager.correction_market:
+            q = self.calculate_realtime_power(market_time.hour)
+        else:
             q = self.q_uc[market_time.hour]
+        for price in prices:
             demand_curve.add(Point(price=price, quantity=q))
 
         topic_suffix = "DemandCurve"
@@ -195,6 +199,31 @@ class UncontrolLoadAgent(TransactiveBase):
                    self.core.identity, demand_curve.points)
         self.publish_record(topic_suffix, message)
         return demand_curve
+
+    def calculate_realtime_power(self, _hour):
+        start_time = self.current_datetime - td(minutes=self.realtime_interval)
+        power_array = []
+        power_dict = {}
+        q = 0
+        for _time, power in self.rt_power.items():
+            _log.debug("RT1 -- start_time: %s -- time: %s -- power: %s", start_time, _time, power)
+            if _time >= start_time:
+                power_array.append(power)
+                power_dict[_time] = power
+                _log.debug("RT2 -- power_array: %s", power_array)
+        if power_array and self.realtime_interval < 60:
+            smoothing_constant = 2.0 / (len(power_array) + 1.0) * 2.0 if power_array else 1.0
+            smoothing_constant = smoothing_constant if smoothing_constant <= 1.0 else 1.0
+            power_array.sort(reverse=True)
+            _log.debug("RT3 -- sort power_array: %s", power_array)
+            for n in range(len(power_array)):
+                q += power_array[n] * smoothing_constant * (1.0 - smoothing_constant) ** n
+            q += power_array[-1] * (1.0 - smoothing_constant) ** (len(power_array))
+        else:
+            q = self.q_uc[_hour]
+        self.rt_power = power_dict
+        _log.debug("RT3 -- q: %s", q)
+        return q
 
     def init_predictions(self, output_info):
         pass
@@ -246,6 +275,7 @@ class UncontrolLoadAgent(TransactiveBase):
         if not self.demand_aggregation_working:
             if self.power_aggregation:
                 self.uc_load_array.append(sum(self.power_aggregation))
+                self.rt_power[current_time] = - sum(self.power_aggregation)
                 self.normalize_to_hour += 1.0
                 _log.debug("Current ts uncontrollable load: {}".format(sum(self.power_aggregation)))
             else:
@@ -258,7 +288,6 @@ class UncontrolLoadAgent(TransactiveBase):
                 _log.debug("Current hour uncontrollable load: {}".format(mean(self.uc_load_array)*self.normalize_to_hour/60.0))
                 self.uc_load_array = []
                 self.normalize_to_hour = 0
-
             self.current_hour = current_hour
 
     def conversion_handler(self, conversion, points, point_list):

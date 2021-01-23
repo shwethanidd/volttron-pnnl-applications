@@ -75,7 +75,7 @@ class Market(object):
     def price_callback(self, timestamp, market_name, buyer_seller, price, quantity):
         pass
 
-    def create_demand_curve(self, market_name, market_time, occupied):
+    def create_demand_curve(self, market_name, market_time, occupied, realtime):
         """
         Create demand curve.  market_index (0-23) where next hour is 0
         (or for single market 0 for next market).  sched_index (0-23) is hour
@@ -95,7 +95,7 @@ class Market(object):
                 _set = control
             else:
                 _set = self.off_setpoint
-            q = self.get_q(_set, market_time, occupied, realtime=False)
+            q = self.get_q(_set, market_time, occupied, realtime=realtime)
             # q = 100*(i+1)
             # i +=1
             demand_curve.add(Point(price=price, quantity=q))
@@ -157,7 +157,7 @@ class RealTimeMarket(Market):
         if self.schedule:
             occupied = self.check_schedule(market_time)
 
-        demand_curve = self.create_demand_curve(market_name, parse(market_time), occupied)
+        demand_curve = self.create_demand_curve(market_name, parse(market_time), occupied, realtime=True)
         self.demand_curve[market_time] = demand_curve
         result, message = self.make_offer(market_name, buyer_seller, demand_curve)
 
@@ -225,7 +225,7 @@ class DayAheadMarket(Market):
         if self.schedule:
             occupied = self.check_schedule(market_time)
 
-        demand_curve = self.create_demand_curve(market_name, parse(market_time), occupied)
+        demand_curve = self.create_demand_curve(market_name, parse(market_time), occupied, realtime=False)
         self.demand_curve[market_name] = demand_curve
         result, message = self.make_offer(market_name, buyer_seller, demand_curve)
 
