@@ -1832,5 +1832,6 @@ class Neighbor(object):
 
         return neighbor_dict
 
+
 if __name__ == '__main__':
     nm = Neighbor()
