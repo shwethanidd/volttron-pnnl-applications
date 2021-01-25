@@ -82,8 +82,8 @@ __version__ = '0.3'
 
 class UncontrolLoadAgent(TransactiveBase):
     """
-    The SampleElectricMeterAgent serves as a sample of an electric meter that
-    sells electricity for a single building at a fixed price.
+    The UncontrolLoadAgent submits a fixed demand curve to represent
+    the uncontrolled load within a building.
     """
 
     def __init__(self, config_path, **kwargs):
@@ -119,7 +119,6 @@ class UncontrolLoadAgent(TransactiveBase):
 
     def setup(self):
         """
-        Set up subscriptions for demand limiting case.
         :param sender:
         :param kwargs:
         :return:
