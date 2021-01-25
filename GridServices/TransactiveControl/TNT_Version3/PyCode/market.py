@@ -107,7 +107,8 @@ class Market(object):
                     name='',
                     next_market_clearing_time=None,
                     negotiation_lead_time=timedelta(hours=0),
-                    prior_market_in_series=None):
+                    prior_market_in_series=None,
+                    real_time_duration=15):
 
         # These properties are relatively static and may be received as parameters:
         self.activationLeadTime = activation_lead_time      # [timedelta] Time in market state "Active"
@@ -156,6 +157,7 @@ class Market(object):
 
         self.new_data_signal = False
         self.deliverylead_schedule_power = False
+        self.real_time_duration = real_time_duration
 
     def events(self, my_transactive_node):
         """

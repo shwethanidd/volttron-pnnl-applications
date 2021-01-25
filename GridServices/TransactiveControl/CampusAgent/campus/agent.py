@@ -140,6 +140,7 @@ class CampusAgent(Agent, TransactiveNode):
         Timer.sim_one_hr_in_sec = self.simulation_one_hour_in_seconds
         self._stop_agent = False
         self.city = None
+        self.real_time_duration = self.config.get('real_time_duration', 15)
 
     @Core.receiver('onstart')
     def onstart(self, sender, **kwargs):
@@ -396,6 +397,7 @@ class CampusAgent(Agent, TransactiveNode):
         market.negotiationLeadTime = timedelta(minutes=15)
         market.marketLeadTime = timedelta(minutes=15)
         market.activationLeadTime = timedelta(minutes=0)
+        market.real_time_duration = self.real_time_duration
 
         # Determine the current and next market clearing times in this market:
         current_time = Timer.get_cur_time()

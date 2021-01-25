@@ -128,6 +128,7 @@ class CityAgent(Agent, TransactiveNode):
         self.transactive_record_topic = "{}/{}/transactive_record".format(self.db_topic, self.name)
         self.market_balanced_price_topic = "{}/{}/market_balanced_prices".format(self.db_topic, self.name)
         self.market_topic = "{}/{}/market".format(self.db_topic, self.name)
+        self.real_time_duration = self.config.get('real_time_duration', 15)
 
     def get_exp_start_time(self):
         one_second = timedelta(seconds=1)
@@ -412,6 +413,7 @@ class CityAgent(Agent, TransactiveNode):
         market.negotiationLeadTime = timedelta(minutes=15)
         market.marketLeadTime = timedelta(minutes=15)
         market.activationLeadTime = timedelta(minutes=0)
+        market.real_time_duration = self.real_time_duration
 
         # Determine the current and next market clearing times in this market:
         current_time = Timer.get_cur_time()

@@ -204,6 +204,7 @@ class BuildingAgent(MarketAgent, TransactiveNode):
         self.day_ahead_mixmarket_running = False
         self.day_ahead_clear_price_sent = False
         self.real_time_clear_price_sent = False
+        self.real_time_duration = self.config.get('real_time_duration', 15)
 
     @Core.receiver('onstart')
     def onstart(self, sender, **kwargs):
@@ -602,7 +603,8 @@ class BuildingAgent(MarketAgent, TransactiveNode):
         market.negotiationLeadTime = timedelta(minutes=15)
         market.marketLeadTime = timedelta(minutes=15)
         market.activationLeadTime = timedelta(minutes=0)
-
+        market.real_time_duration = self.real_time_duration
+        
         # Determine the current and next market clearing times in this market:
         current_time = Timer.get_cur_time()
         current_time = current_time - timedelta(hours=24)
