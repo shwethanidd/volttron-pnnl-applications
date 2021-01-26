@@ -42,7 +42,6 @@ class ahuchiller(object):
         self.coil_load = 0.
 
         self.get_input_value = parent.get_input_value
-        self.smc_interval = parent.single_market_contol_interval
         self.parent = parent
         self.sfs_name = data_names.SFS
         self.mat_name = data_names.MAT
@@ -72,13 +71,14 @@ class ahuchiller(object):
         else:
             self.tDis = q_load
             self.dat = q_load
-            self.mDotAir = self.saf
 
     def calculate_fan_power(self):
         if self.power_unit == 'W':
-            self.fan_power = (self.c0 + self.c1*self.mDotAir + self.c2*pow(self.mDotAir, 2) + self.c3*pow(self.mDotAir, 3))*1000.  # watts
+            self.fan_power = (self.c0 + self.c1 * self.mDotAir + self.c2 * pow(self.mDotAir, 2) + self.c3 * pow(
+                self.mDotAir, 3)) * 1000.  # watts
         else:
-            self.fan_power = self.c0 + self.c1*self.mDotAir + self.c2*pow(self.mDotAir, 2) + self.c3*pow(self.mDotAir, 3)  # kW
+            self.fan_power = self.c0 + self.c1 * self.mDotAir + self.c2 * pow(self.mDotAir, 2) + self.c3 * pow(
+                self.mDotAir, 3)  # kW
 
     def calculate_coil_load(self, oat):
         if self.has_economizer:
@@ -87,13 +87,13 @@ class ahuchiller(object):
             elif oat < self.economizer_limit:
                 coil_load = self.mDotAir * self.cpAir * (self.tDis - oat)
             else:
-                mat = self.tset_avg*(1.0 - self.min_oaf) + self.min_oaf*oat
+                mat = self.tset_avg * (1.0 - self.min_oaf) + self.min_oaf * oat
                 coil_load = self.mDotAir * self.cpAir * (self.tDis - mat)
         else:
             mat = self.tset_avg * (1.0 - self.min_oaf) + self.min_oaf * oat
             coil_load = self.mDotAir * self.cpAir * (self.tDis - mat)
 
-        if coil_load > 0: #heating mode is not yet supported!
+        if coil_load > 0:  # heating mode is not yet supported!
             self.coil_load = 0.0
         else:
             self.coil_load = coil_load
@@ -124,4 +124,4 @@ class ahuchiller(object):
         else:
             _log.debug("AHUChiller building does not have chiller!")
             self.coil_load = 0.0
-        return abs(self.coil_load)/self.cop/0.9 + max(self.fan_power, 0)
+        return abs(self.coil_load) / self.cop / 0.9 + max(self.fan_power, 0)
