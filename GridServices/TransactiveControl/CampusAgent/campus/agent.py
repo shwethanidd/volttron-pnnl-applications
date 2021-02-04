@@ -122,6 +122,7 @@ class CampusAgent(Agent, TransactiveNode):
         self.dc_threshold_topic = "{}/{}/dc_threshold_topic".format(self.db_topic, self.name)
 
         # New TNT db topics
+        self.transactive_operation_topic = "{}/{}/transactive_operation".format(self.db_topic, self.name)
         self.local_asset_topic = "{}/{}/local_assets".format(self.db_topic, self.name)
         self.neighbor_topic = "{}/{}/neighbors".format(self.db_topic, self.name)
         self.transactive_record_topic = "{}/{}/transactive_record".format(self.db_topic, self.name)
@@ -140,7 +141,7 @@ class CampusAgent(Agent, TransactiveNode):
         Timer.sim_one_hr_in_sec = self.simulation_one_hour_in_seconds
         self._stop_agent = False
         self.city = None
-        self.real_time_duration = self.config.get('real_time_duration', 15)
+        self.real_time_duration = self.config.get('real_time_market_duration', 15)
 
     @Core.receiver('onstart')
     def onstart(self, sender, **kwargs):

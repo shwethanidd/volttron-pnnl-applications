@@ -112,15 +112,19 @@ class Auction(Market):
             # Call on the local asset to schedule its power.
             local_asset.schedule(self)
 
+            _log.debug(f"{self.name}: transition_from_active_to_negotiation")
+
+            self.publish_records(my_transactive_node)
             # Publish local asset info
-            topic = "{}/{}".format(my_transactive_node.local_asset_topic,
+            # SN: No need, publish transactive operation instead
+            '''topic = "{}/{}".format(my_transactive_node.local_asset_topic,
                                    my_transactive_node.localAssets[x].name)
             msg = local_asset.getDict()
             headers = {headers_mod.DATE: format_timestamp(Timer.get_cur_time())}
-            #_log.debug(
-            #    "AUCTION:transition_from_active_to_negotiation: {} and info: {}".format(topic, msg))
+            _log.debug(
+                "AUCTION:transition_from_active_to_negotiation: {} and info: {}".format(topic, msg))
             my_transactive_node.vip.pubsub.publish("pubsub",topic, headers, msg)
-
+            '''
         return None
 
     # TODO: On transition to the negotiation state, make sure the auction is not converged.
@@ -158,10 +162,11 @@ class Auction(Market):
                 headers = {headers_mod.DATE: format_timestamp(Timer.get_cur_time())}
                 #_log.debug(
                 #    "AUCTION:while_in_negotiation: {} and info: {}".format(topic, msg))
-                my_transactive_node.vip.pubsub.publish("pubsub", topic, headers, msg)
+                #my_transactive_node.vip.pubsub.publish("pubsub", topic, headers, msg)
 
                 self.converged = True
-
+        else:
+            self._stateIsCompleted = True
         return None
 
     # TODO: Consider using TransactiveNode property "converged" to keep track of those downstream agents that have \
@@ -198,7 +203,6 @@ class Auction(Market):
         all_received = True                                                 # a local flag to this method
 
         #_log.debug("Market name: {} while_in_market_lead. Trying to publish neighbor info".format(self.name))
-        self.publish_records(my_transactive_node, upstream_agents, downstream_agents)
 
         # Index through the downstream agents.
         for da in range(len(downstream_agents)):
@@ -245,23 +249,16 @@ class Auction(Market):
             if upstream_agents is None or len(upstream_agents) == 0:
                 _log.warning('Warning: There must exist one upstream neighbor agent in an auction.')
                 # raise Warning('There must exist one upstream neighbor agent in an auction.')
-
             else:
                 upstream_agent = upstream_agents[0]                             # Clear indexing of lone upstream agent
 
                 if upstream_agent.transactive is True:
-                    #_log.debug("Market name: {} while_in_market_lead calling prep_transactive_signal() on upstream agent: {}".format(self.name,
-                    #                                                                                                                 upstream_agent.name))
-                    # Call on the upstream agent model to prepare its transactive signal.
+                    # Call on the upstream agent model  to prepare its transactive signal.
                     upstream_agent.prep_transactive_signal(self, my_transactive_node)
 
-                    # Send the transactive signal (i.e., aggregated bid) to the upstream agent
-                    # if it is a transactive agent.
-                    _log.debug("Market name: {} while_in_market_lead sending transactive signal to upstream agent: {}".format(self.name,
-                                                                                                                              upstream_agent.name))
-                    _log.debug("Market name: {} while_in_market_lead UPSTREAM_AGENT PUBLISH TOPIC: {}".format(self.name,
-                                                                                                              upstream_agent.publishTopic))
+                    # Send the transactive signal (i.e., aggregated bid) to the upstream agent if it is a transactive agent.
                     upstream_agent.send_transactive_signal(self, my_transactive_node, upstream_agent.publishTopic)
+            self._stateIsCompleted = True
 
     def while_in_delivery_lead(self, my_transactive_node):
         """
@@ -383,21 +380,60 @@ class Auction(Market):
 
                 # 201731DJH: Now that the LMP has been determined, power may be scheduled for this downstream neighbor.
                 downstream_agent.schedule_power(self)
-                #_log.debug("while_in_delivery_lead: Here 12")
+
                 # prepare an aggregated offer for the downstream agent,
                 downstream_agent.prep_transactive_signal(self, my_transactive_node)
+                _log.debug("SN: while_in_delivery_lead() DOWNSTREAM_AGENT PUBLISH TOPIC: {}".format(
+                    downstream_agent.publishTopic))
+                _log.debug("SN: while_in_delivery_lead() sending transactive signal to downstream agent: {}".format(
+                    downstream_agent.name))
+
                 # and send it a transactive signal (i.e., an offer).
-                _log.debug("SN: while_in_delivery_lead() DOWNSTREAM_AGENT PUBLISH TOPIC: {}".format(downstream_agent.publishTopic))
-                _log.debug("SN: while_in_delivery_lead() sending transactive signal to downstream agent: {}".format(downstream_agent.name))
-                downstream_agent.send_transactive_signal(self, my_transactive_node,
-                                                         downstream_agent.publishTopic)
+                downstream_agent.send_transactive_signal(self, my_transactive_node, downstream_agent.publishTopic)
+                self._stateIsCompleted = True
+
+    def transition_from_inactive_to_active(self, my_transactive_node):
+        """
+        For activities that should accompany a market object's transition from market state "Inactive" to
+        "Active"
+        :param my_transactive_node: transactive node object--this agent
+        :return: None
+        """
+        _log.debug(f"{self.name}: transition_from_inactive_to_active")
+        #super(Auction, self).transition_from_inactive_to_active(my_transactive_node)
+        self.publish_records(my_transactive_node)
+        return None
+
+    def transition_from_negotiation_to_market_lead(self, my_transactive_node):
+        """
+        For activities that should accompany a market object's transition from market state "Negotiation" to
+        "MarketLead."
+        :param my_transactive_node: transactive node object--this agent
+        :return: None
+        """
+        _log.debug(f"{self.name}: transition_from_negotiation_to_market_lead")
+        #super(Auction, self).transition_from_negotiation_to_market_lead(my_transactive_node)
+        self.publish_records(my_transactive_node)
+        return None
+
+    def transition_from_market_lead_to_delivery_lead(self, my_transactive_node):
+        """
+        For activities that should accompany a market object's transition from market state "MarketLead" to
+        "DeliveryLead," (i.e., the clearing of the market).
+        :param my_transactive_node: transactive node object--this agent
+        :return: None
+        """
+        _log.debug(f"{self.name}: transition_from_market_lead_to_delivery_lead")
+        #super(Auction, self).transition_from_market_lead_to_delivery_lead(my_transactive_node)
+        self.publish_records(my_transactive_node)
+        return None
 
     def transition_from_delivery_lead_to_delivery(self, my_transactive_node):
         """
         :param my_transactive_node: transactive node object--this agent
         :return: None
         """
-        _log.debug("transition_from_delivery_lead_to_delivery")
+        _log.debug(f"{self.name}: transition_from_delivery_lead_to_delivery")
         super(Auction, self).transition_from_delivery_lead_to_delivery(my_transactive_node)
         headers = {headers_mod.DATE: format_timestamp(Timer.get_cur_time())}
         msg = dict()
@@ -406,29 +442,47 @@ class Auction(Market):
                                                topic=my_transactive_node.market_balanced_price_topic,
                                                headers=headers,
                                                message=msg)
+        self.publish_records(my_transactive_node)
         return None
 
-    def publish_records(self, my_transactive_node, upstream_agents, downstream_agents):
-        for agt in upstream_agents:
-            topic = "{}/{}".format(my_transactive_node.neighbor_topic, agt.name)
+    def transition_from_reconcile_to_expired(self, my_transactive_node):
+        """
+        For activities that should accompany a market object's transition from market state "Reconcile" to "Expired."
+        :param my_transactive_node: transactive node object--the agent
+        :return: None
+        """
+        _log.debug("transition_from_reconcile_to_expired")
+        super(Auction, self).transition_from_reconcile_to_expired(my_transactive_node)
+        self.publish_records(my_transactive_node)
+        return None
 
-            msg = agt.getDict()
+    def publish_records(self, my_transactive_node, upstream_agents=None, downstream_agents=None):
+        headers = {headers_mod.DATE: format_timestamp(Timer.get_cur_time())}
+        transactive_operation = dict()
+        transactive_operation['prices'] = list()
+        transactive_operation['demand'] = dict()
+        transactive_operation['demand']['bid'] = dict()
 
-            headers = {headers_mod.DATE: format_timestamp(Timer.get_cur_time())}
-            #_log.debug("AUCTION: Publishing on Upstream agent topic: {} and info: {}".format(topic,
-            #                                                                              msg))
-            my_transactive_node.vip.pubsub.publish(peer='pubsub', topic=topic,
-                                                   headers=headers, message=msg)
+#        _log.debug("AUCTION: BEFORE: info: {}".format(transactive_operation))
+        for idx, p in enumerate(self.marginalPrices):
+            transactive_operation['prices'].append((utils.format_timestamp(p.timeInterval.startTime), p.value))
 
-        for agt in downstream_agents:
-            topic = "{}/{}".format(my_transactive_node.neighbor_topic, agt.name)
-            msg = agt.getDict()
-            headers = {headers_mod.DATE: format_timestamp(Timer.get_cur_time())}
-            #_log.debug("AUCTION: Publishing on Downstream agent topic: {} and info: {}".format(topic,
-            #                                                                              msg))
-            my_transactive_node.vip.pubsub.publish(peer='pubsub', topic=topic,
-                                                   headers=headers, message=msg)
+        for neighbor in my_transactive_node.neighbors:
+            transactive_operation['demand']['bid'][neighbor.name] = neighbor.getDict()['sent_signal']
 
-        my_transactive_node.vip.pubsub.publish("pubsub", my_transactive_node.market_topic, headers, msg)
-        #_log.debug("AUCTION: Publishing on market topic: {} and info: {}".format(
-        #    my_transactive_node.market_topic, msg))
+        if self.name.startswith('Real-Time'):
+            transactive_operation['demand']['actual'] = dict()
+            transactive_operation['demand']['actual']['neighbor'] = dict()
+            transactive_operation['demand']['actual']['assets'] = dict()
+
+            for neighbor in my_transactive_node.neighbors:
+                transactive_operation['demand']['actual']['neighbor'][neighbor.name] = \
+                    neighbor.getDict()['received_signal']
+            for asset in my_transactive_node.localAssets:
+                transactive_operation['demand']['actual']['assets'][asset.name] = asset.getDict()['vertices']
+
+        topic = "{}/{}".format(my_transactive_node.transactive_operation_topic, self.name)
+        my_transactive_node.vip.pubsub.publish(peer='pubsub', topic=topic,
+                                               headers=headers, message=transactive_operation)
+#        _log.debug("AUCTION: Publishing on market topic: {} and info: {}".format(topic, transactive_operation))
+

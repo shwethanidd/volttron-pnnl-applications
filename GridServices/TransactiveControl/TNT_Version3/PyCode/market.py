@@ -76,6 +76,7 @@ from .market_types import MarketTypes
 from .method import Method
 from warnings import warn
 #from matplotlib import pyplot as plt
+from .data_manager import *
 
 utils.setup_logging()
 _log = logging.getLogger(__name__)
@@ -158,6 +159,10 @@ class Market(object):
         self.new_data_signal = False
         self.deliverylead_schedule_power = False
         self.real_time_duration = real_time_duration
+        # 210118DJH: Must introduce a flag to end activities after various market states. This flag should be made
+        #            false in each transition and made true after all the tasks have been completed in the ensuing
+        #            market state.
+        self._stateIsCompleted = False
 
     def events(self, my_transactive_node):
         """
@@ -197,6 +202,9 @@ class Market(object):
                 _log.info("spawning new markets")
                 self.spawn_markets(my_transactive_node, self.nextMarketClearingTime)
                 self.isNewestMarket = False
+                # 210118DJH: New flag. Set true when responsibilities in market state are completed.
+                self._stateIsCompleted = True
+
         _log.info("Market name: {}, self.marketState: {}".format(self.name, self.marketState))
 
         # EVENT 1B: TRANSITION FROM INACTIVE TO ACTIVE STATE ***********************************************************
@@ -216,12 +224,17 @@ class Market(object):
                 # Call this replaceable method where appropriate actions can be taken.
                 self.transition_from_inactive_to_active(my_transactive_node)
 
+                # 210118DJH: New flag. Set false upon transition to new market state.
+                self._stateIsCompleted = False
+
         # EVENT 1C: ACTIONS WHILE IN THE ACTIVE STATE ******************************************************************
         # These are actions to be taken while the market object is in its initial "Active" market state.
-        if self.marketState == MarketState.Active:
-
+        # 210118DJH. New flag. No state should be entered until the prior one is done.
+        if self.marketState == MarketState.Active and self._stateIsCompleted is not True:
             # Place actions to be taken in this state in the following method. The method may be overwritten by child
             # classes of class Market.
+            # 210118DJH: NOTE: Flag "_stateIsComplete" must be set true after the market's responsibilities have been
+            #            completed in this next method or its replacements.
             self.while_in_active(my_transactive_node)
 
         # EVENT 2A: TRANSITION FROM ACTIVE TO NEGOTIATION STATE ********************************************************
@@ -229,7 +242,8 @@ class Market(object):
         # time specified before an upcoming market clearing of a market object. Specifically, it begins a specified
         # market lead time, less another negotiation lead time, prior to the clearing of the market object.
 
-        if self.marketState == MarketState.Active:
+        # 210118DJH. New flag. Do not transition out of a state until it is completed.
+        if self.marketState == MarketState.Active and self._stateIsCompleted is True:
             _log.debug("In Market name: {}, Market State: {}, Current time: {}, marketClearingTime: {}, marketLeadTime: {}, negotiationLeadTime:{}, ".format(
                 self.name,
                 self.marketState,
@@ -253,36 +267,30 @@ class Market(object):
                 # of class Market.
                 self.transition_from_active_to_negotiation(my_transactive_node)
 
+                # 210118DJH: New flag. Set false upon entering a new market state.
+                self._stateIsCompleted = False
+
         # EVENT 2B: ACTIONS WHILE IN MARKET STATE NEGOTIATION **********************************************************
         # These are the actions while in the "Negotiation" market state.
 
-        if self.marketState == MarketState.Negotiation:
-
+        if self.marketState == MarketState.Negotiation and self._stateIsCompleted is not True:
+            _log.debug("In Market name: {} In Market State: {}".format(self.name, self.marketState))
             # Place actions to be completed during this market state in the following method. The method may be
             # overwritten by child classes of class Market. Note that the actions during this state may be made
             # dependent upon a convergence flag.
-
+            # 210118DJH: NOTE: Flag "_stateIsComplete" must be set true after the market's responsibilities have been
+            #            completed in this next method or its replacements.
             self.while_in_negotiation(my_transactive_node)
 
         # EVENT 3A: TRANSITION FROM NEGOTIATION TO MARKET LEAD STATE ***************************************************
         # This is the transition from "Negotiation" to "MarketLead" market states.
         # The transition occurs at a time relative to the market object's market clearing time. Specifically, it starts
         # a defined lead time prior to the market clearing time.
-        if self.marketState == MarketState.Negotiation:
-            _log.debug("In Market name: {}, In Market State: {}, Current time: {}, marketClearingTime: {}, marketLeadTime: {}".format(
-                self.name,
-                self.marketState,
-                current_time,
-                self.marketClearingTime,
-                self.marketLeadTime
-            ))
+        # 210118DJH: Adding flag. No state transition should be allowed unless the prior state is completed.
+        if self.marketState == MarketState.Negotiation and self._stateIsCompleted is True:
+
             market_lead_start_time = self.marketClearingTime - self.marketLeadTime
 
-            _log.debug(
-                "In Market name: {} In Market State: {}, current_time: {}, market_lead_start_time: {}".format(self.name,
-                                                                                                            self.marketState,
-                                                                                                            current_time,
-                                                                                                            market_lead_start_time))
             if current_time >= market_lead_start_time:
 
                 # Change the market state to "MarketLead."
@@ -292,18 +300,24 @@ class Market(object):
                 #  of class Market.
                 self.transition_from_negotiation_to_market_lead(my_transactive_node)
 
+                # 210118DJH: New flag. Set false prior to transition to new market state.
+                self._stateIsCompleted = False
+
         # EVENT 3B: ACTIONS WHILE IN THE MARKET LEAD STATE *************************************************************
         # These are the actions while in the "MarketLead" market state.
 
-        if self.marketState == MarketState.MarketLead:
+        if self.marketState == MarketState.MarketLead and self._stateIsCompleted is not True:
 
             #  Specify actions for the market state "MarketLead" in this following method. The method may be
             #  overwritten by child classes of class Market.
+            # 210118DJH: NOTE: Flag "_stateIsComplete" must be set true after the market's responsibilities have been
+            #            completed in this next method or its replacements.
             self.while_in_market_lead(my_transactive_node)
 
         # EVENT 4A: TRANSITION FROM MARKET LEAD TO DELIVERY LEAD STATE *************************************************
         # This is the transition from "MarketLead" to "DeliveryLead" market states.
-        if self.marketState == MarketState.MarketLead:
+        # 210118DJH: Adding flag. No state transition should be allowed unless the prior state is done.
+        if self.marketState == MarketState.MarketLead and self._stateIsCompleted is True:
             _log.debug("In Market name: {}, Market State: {}, Current time: {}, marketClearingTime: {}".format(
                 self.name,
                 self.marketState,
@@ -326,20 +340,26 @@ class Market(object):
                 # Place other transition actions here. This following method may be replaced.
                 self.transition_from_market_lead_to_delivery_lead(my_transactive_node)
 
+                # 210118DJH: New flag. Set false prior to new market state.
+                self._stateIsCompleted = False
+
         # EVENT 4B: ACTIONS WHILE IN MARKET STATE DELIVERY LEAD ********************************************************
         # These are the actions while in the "DeliveryLead" market state.
 
-        if self.marketState == MarketState.DeliveryLead:
+        if self.marketState == MarketState.DeliveryLead and self._stateIsCompleted is not True:
 
             # Place actions in this following method if they are to occur during market state "DeliveryLead." This
             # method may be overwritten by child classes of class Market.
+            # 210118DJH: NOTE: Flag "_stateIsComplete" must be set true after the market's responsibilities have been
+            #            completed in this next method or its replacements.
             self.while_in_delivery_lead(my_transactive_node)
 
         # EVENT 5A: TRANSITION FROM DELIVERY LEAD TO DELIVERY **********************************************************
         # This is the transition from "DeliveryLead" to "Delivery" market states. The start of market state "Delivery"
         # is timed relative to the market object's market clearing time. Specifically, it begins a delivery lead time
         # after the market has cleared.
-        if self.marketState == MarketState.DeliveryLead:
+        # 210118DJH: Adding flag. No state transition should be allowed unless the prior state is done.
+        if self.marketState == MarketState.DeliveryLead and self._stateIsCompleted is True:
 
             delivery_start_time = self.marketClearingTime + self.deliveryLeadTime
             _log.debug("In Market name: {} In Market State: {}, current_time: {}, delivery_start_time: {}".format(self.name,
@@ -354,27 +374,34 @@ class Market(object):
                 # Other actions for this transition should be placed in the following method, which can be replaced.
                 self.transition_from_delivery_lead_to_delivery(my_transactive_node)
 
+                # 210118DJH: New flag. Set false prior to each new market state.
+                self._stateIsCompleted = False
+
         # EVENT 5B: ACTIONS WHILE IN MARKET STATE DELIVERY *************************************************************
         # These are the actions while in the "Delivery" market state.
 
-        if self.marketState == MarketState.Delivery:
+        if self.marketState == MarketState.Delivery and self._stateIsCompleted is not True:
 
             # Place any actions to be conducted in market state "Delivery" in this following method. The method may be
             # overwritten by child classes of class Market.
+            # 210118DJH: NOTE: Flag "_stateIsComplete" must be set true after the market's responsibilities have been
+            #            completed in this next method or its replacements.
             self.while_in_delivery(my_transactive_node)
 
         # EVENT 6A: TRANSITION FROM DELIVERY TO RECONCILE **************************************************************
         # This is the transition from "Delivery" to "Reconcile" market states. The Reconcile market state begins at a
         # time referenced from the market object's clearing time. Specifically, reconciliation begins after all the
         # market object's market intervals and an additional delivery lead time have expired after the market clears.
-        if self.marketState == MarketState.Delivery:
+        # 210118DJH: Adding flag. No state transition should be allowed unless the prior state is completed.
+        if self.marketState == MarketState.Delivery and self._stateIsCompleted is True:
             _log.debug("In Market name: {} In Market State: {}, marketClearingTime: {}, deliveryLeadTime: {}, intervalsToClear: {}, intervalDuration: {}".format(
                 self.name,
                 self.marketState,
-                                                                                                 self.marketClearingTime,
-                                                                                                 self.deliveryLeadTime,
-                                                                                                 self.intervalsToClear,
-                                                                                                 self.intervalDuration))
+                self.marketClearingTime,
+                self.deliveryLeadTime,
+                self.intervalsToClear,
+                self.intervalDuration))
+
             reconcile_start_time = self.marketClearingTime + self.deliveryLeadTime \
                                + self.intervalsToClear * self.intervalDuration
             _log.debug("In Market name: {} In Market State: {}, current_time: {}, reconcile_start_time: {}".format(self.name,
@@ -392,19 +419,27 @@ class Market(object):
                 # Other transition actions may be placed in this method.
                 self.transition_from_delivery_to_reconcile(my_transactive_node)
 
-        # EVENT 6A: ACTIONS WHILE IN MARKET STATE RECONCILE ************************************************************
-        # These are the actions while in the "Reconcile" market state.
+                # 210118DJH: New flag. Set flat false prior to every new market state.
+                self._stateIsCompleted = False
 
-        if self.marketState == MarketState.Reconcile:
+        # EVENT 6A: ACTIONS WHILE IN MARKET STATE RECONCILE ************************************************************
+        # These are the actions while in the "DeliveryLead" market state.
+
+        if self.marketState == MarketState.Reconcile and self._stateIsCompleted is not True:
             _log.debug("In Market name: {} In Market State: {}".format(self.name, self.marketState))
             # Place actions in this following method if they should occur during market state "Reconcile." This method
             # may be overwritten by children of the Market class.
+            # 210118DJH: NOTE: Flag "_stateIsComplete" must be set true after the market's responsibilities have been
+            #            completed in this next method or its replacements.
             self.while_in_reconcile(my_transactive_node)
 
         # EVENT 7A: TRANSITION FROM RECONCILE TO EXPIRED ***************************************************************
         # This is the transition from "Reconcile" to "Expired" market states.
-        if self.marketState == MarketState.Reconcile:
+        # 210118DJH: Adding flag. No state transition should be allowed unless the prior state is completed.
+        if self.marketState == MarketState.Reconcile and self._stateIsCompleted is True:
 
+            # 210118DJH: The use of flag "reconciled" is redundant now that flag "stateIsCompleted" is available.
+            #            TODO: Replace instanced of flag "reconciled" by new flag "stateIsCompleted."
             if self.reconciled is True:
 
                 # Change the market state to "Expired".
@@ -413,12 +448,15 @@ class Market(object):
                 # Replace this method for other transitional actions.
                 self.transition_from_reconcile_to_expired(my_transactive_node)
 
+                # 210118DJH: New flag. Set false prior to any new state.
+                self._stateIsCompleted = False
+
         # EVENT 7B: WHILE EXPIRED **************************************************************************************
         # These are the actions while in the "Expired" market state. It should be pretty standard that market objects
         # are deleted after they expire, so it is unlikely that alternative actions will be needed by child Market
         # classes.
 
-        if self.marketState == MarketState.Expired:
+        if self.marketState == MarketState.Expired and self._stateIsCompleted is not True:
             _log.debug("Expired. In Market name: {} In Market State: {}".format(self.name,
                                                                                 self.marketState))
             # Delete market intervals that are defined by this market object.
@@ -429,9 +467,6 @@ class Market(object):
             # loop as we index through the list MyTransactiveMode.markets. I've tested that this revised approach works,
             # however, as long as there are no further references to self in the remainder of the loop.
             # my_transactive_node.markets.remove(self)  # REPLACE OR USE ALTERNATIVE APPROACH
-
-
-            # Shwetha commented since it was getting messed up with the events loop
             # my_transactive_node.markets[:] = [x for x in my_transactive_node.markets if x != self]
 
             # NOTE: We let garbage collection finally delete the object once it is entirely out of scope.
@@ -490,6 +525,9 @@ class Market(object):
         # Initialize the marginal prices in the Market object's time intervals.
         new_market.check_marginal_prices(my_transactive_node)
 
+        # 210127DJH: Save information about the new Market object into a formatted csv file.
+        append_table(obj=new_market)
+
     def transition_from_inactive_to_active(self, my_transactive_node):
         """
         These actions, if any are taken as a market transitions from its inactive to its active market state.
@@ -508,7 +546,10 @@ class Market(object):
         :param my_transactive_node: transactive node object--this agent
         :return: None
         """
-        pass
+        #pass
+        # 210118DJH: NOTE: Flag "_stateIsComplete" must be set true after the market's responsibilities have been
+        #            completed in this next method or its replacements.
+        self._stateIsCompleted = True
         return None
 
     def transition_from_active_to_negotiation(self, my_transactive_node):
@@ -538,6 +579,9 @@ class Market(object):
         else:
             # This is most likely a wait state while converged in the negotiation state.
             pass
+            # 210118DJH: NOTE: Flag "_stateIsComplete" must be set true after the market's responsibilities have been
+            #            completed in this next method or its replacements.
+            self._stateIsCompleted = True
 
         return None
 
@@ -560,6 +604,9 @@ class Market(object):
         :return: None
         """
         pass
+        # 210118DJH: NOTE: Flag "_stateIsComplete" must be set true after the market's responsibilities have been
+        #            completed in this next method or its replacements.
+        self._stateIsCompleted = True
         return None
 
     def transition_from_market_lead_to_delivery_lead(self, my_transactive_node):
@@ -581,6 +628,9 @@ class Market(object):
         :return: None
         """
         pass
+        # 210118DJH: NOTE: Flag "_stateIsComplete" must be set true after the market's responsibilities have been
+        #            completed in this next method or its replacements.
+        self._stateIsCompleted = True
         return None
 
     def transition_from_delivery_lead_to_delivery(self, my_transactive_node):
@@ -612,6 +662,9 @@ class Market(object):
         # - monitor and meter assets and power exchanges
         # - control assets to negotiated average power
         pass
+        # 210118DJH: NOTE: Flag "_stateIsComplete" must be set true after the market's responsibilities have been
+        #            completed in this next method or its replacements.
+        self._stateIsCompleted = True
         return None
 
     def transition_from_delivery_to_reconcile(self, my_transactive_node):
@@ -640,6 +693,9 @@ class Market(object):
         # using a super() method call.
         # 200908DJH: So, let's go ahead and claim it as our default.
         self.reconciled = True
+        # 210118DJH: NOTE: Flag "_stateIsComplete" must be set true after the market's responsibilities have been
+        #            completed in this next method or its replacements.
+        self._stateIsCompleted = True
 
         return None
 
@@ -693,31 +749,27 @@ class Market(object):
                 data.append(datum)
 
         # Write the vertex data into a csv file based on the current working directory.
-        import os
-        _log.debug("while_in_reconcile: create csv path")
+
         filename = self.marketSeriesName + ".csv"
         data_folder = os.getcwd()
-        _log.debug("Current working directory: {}".format(data_folder))
-        data_folder = data_folder + "/Market_Data/"
-        if not os.path.exists(data_folder):
-            os.makedirs(data_folder)
+        data_folder = data_folder + "\\.."
+        data_folder = data_folder + "\\Market_Data\\"
         full_filename = data_folder + filename
-        _log.debug("while_in_reconcile")
 
         import csv
-        _log.debug("while_in_reconcile: write into csv")
+
         my_file = open(full_filename, 'w+')
         with my_file:
             writer = csv.writer(my_file)
             writer.writerows(data)
-        _log.debug("while_in_reconcile: done writing")
+
         # Gather simpler marginal price data:
         price_data = []
 
         for x in self.marginalPrices:  #
             datum = [self.name,
-                     x.timeInterval.startTime,
-                     x.value]
+                      x.timeInterval.startTime,
+                      x.value]
             price_data.append(datum)
 
         filename = self.name + ".csv"
@@ -806,15 +858,13 @@ class Market(object):
 
             # Create and store an interval value for each vertex.
             for vertex in summed_vertices:
-                self.activeVertices.append(
-                    IntervalValue(
-                        self,
-                        time_interval,
-                        self,
-                        MeasurementType.SystemVertex,
-                        vertex
-                    )
-                )
+                self.activeVertices.append(IntervalValue(calling_object=self,
+                                                         time_interval=time_interval,
+                                                         market=self,
+                                                         measurement_type=MeasurementType.SystemVertex,
+                                                         value=vertex
+                                                         )
+                                           )
 
     def balance(self, my_transactive_node, k=1):
         """
@@ -1585,12 +1635,12 @@ class Market(object):
                     continue
 
                 # Calculate the power for the indexed local asset model at the indexed marginal price and time interval.
-                assets_power = production(asset, marginal_price_list[i], time_interval, market=self)  # [avg.kW]
+                assets_power = production(asset, marginal_price_list[i], time_interval)  # [avg.kW]
 
                 # Find the indexed local asset model's production cost and add it to the sum of production cost pc for
                 # this vertex.
                 vertex_production_cost = vertex_production_cost \
-                                         + prod_cost_from_vertices(asset, time_interval, assets_power)  # [$]
+                                                + prod_cost_from_vertices(asset, time_interval, assets_power)  # [$]
 
                 # Add local asset power p to the sum net power pwr for this vertex.
                 vertex_power = vertex_power + assets_power  # [avg.kW]

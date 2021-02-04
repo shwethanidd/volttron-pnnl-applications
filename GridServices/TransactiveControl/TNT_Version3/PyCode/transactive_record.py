@@ -70,6 +70,9 @@ _log = logging.getLogger(__name__)
 class TransactiveRecord(object):
     def __init__(self,
                  time_interval,
+                 neighbor_name='unknown',  # Name of Neighbor object that owns this record
+                 direction='unknown',  # Reference to record among {'received', 'prepared', 'sent', 'unknown'}
+                 market_name='unknown',  # Reference to market name
                  record=0,
                  marginal_price=0,
                  power=0,
@@ -108,15 +111,25 @@ class TransactiveRecord(object):
         #self.timeStamp = datetime.utcnow()
         self.timeStamp = Timer.get_cur_time()
         _log.debug("TransactiveRecord timeStamp is {}".format(self.timeStamp))
+        # 210126DJH: Property "neighbor" is introduced to assist with data collection. If the name of the associated
+        #            Neighbor object is not captured, a Transactive Record can not be traced to the correct Neighbor.
+        self.neighborName = neighbor_name
+        # 210126DJH: This is a new reference to the source of a record from among ["received", "sent", "prepared"]. It
+        #            is important to data collection.
+        self.direction = direction
+        if self.direction != "unknown":
+            if self.direction not in ["received", "sent", "prepared"]:
+                self.direction = "unknown"
+
+        # 210126DJH: This is a new reference to the market in which the transactive record is relevant. A policy has
+        #            emerged to name Market objects by prepending the clearing time with the market series name.
+        self.marketName = market_name
 
     def getDict(self):
         transactive_record_dict = {
             "timeInterval": self.timeInterval,
             "marginalPrice": self.marginalPrice,
-            "record": self.record,
-            "power": self.power,
-            #"timeStamp": self.timeStamp,
-            "cost": self.cost
+            "power": self.power
         }
 
         return transactive_record_dict

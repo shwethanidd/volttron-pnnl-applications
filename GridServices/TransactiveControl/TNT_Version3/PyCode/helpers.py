@@ -61,9 +61,8 @@ import math
 import logging
 
 from datetime import datetime, timedelta
-
-
 from volttron.platform.agent import utils
+
 utils.setup_logging()
 _log = logging.getLogger(__name__)
 

@@ -189,6 +189,7 @@ class BuildingAgent(MarketAgent, TransactiveNode):
         self._building_market_prices = [None]*24
         self.cleared_price_topic = 'tnc/cleared_prices'
         # New TNT db topics
+        self.transactive_operation_topic = "{}/{}/transactive_operation".format(self.db_topic, self.name)
         self.local_asset_topic = "{}/{}/local_assets".format(self.db_topic, self.name)
         self.neighbor_topic = "{}/{}/neighbors".format(self.db_topic, self.name)
         self.transactive_record_topic = "{}/{}/transactive_record".format(self.db_topic, self.name)
@@ -204,7 +205,7 @@ class BuildingAgent(MarketAgent, TransactiveNode):
         self.day_ahead_mixmarket_running = False
         self.day_ahead_clear_price_sent = False
         self.real_time_clear_price_sent = False
-        self.real_time_duration = self.config.get('real_time_duration', 15)
+        self.real_time_duration = self.config.get('real_time_market_duration', 15)
 
     @Core.receiver('onstart')
     def onstart(self, sender, **kwargs):

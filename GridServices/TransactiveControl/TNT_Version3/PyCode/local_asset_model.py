@@ -693,8 +693,8 @@ class LocalAsset(object):
         # 200929DJH: Trim the list of active vertices so that it will not grow indefinitely.
         self.activeVertices = [x for x in self.activeVertices if x.market.marketState != MarketState.Expired]
 
-        # av = [(x.timeInterval.name, x.value.marginalPrice, x.value.power) for x in self.activeVertices]
-        #        _log.debug("{} asset model active vertices are: {}".format(self.name, av))
+        av = [(x.timeInterval.name, x.value.marginalPrice, x.value.power) for x in self.activeVertices]
+        _log.debug("{} asset model active vertices are: {}".format(self.name, av))
 
     def get_extended_prices(self, market):  # 200120DJH This does not, after all, require a TransactiveNode parameter.
         """
@@ -862,18 +862,11 @@ class LocalAsset(object):
         self.totalDualCost = sum([x.value for x in self.dualCosts])
 
     def getDict(self):
-        scheduled_powers = [(x.timeInterval.startTime, x.value) for x in self.scheduledPowers]
-        vertices = [(x.timeInterval.startTime, x.value.marginalPrice, x.value.power) for x in self.activeVertices]
+        scheduled_powers = [(utils.format_timestamp(x.timeInterval.startTime), x.value) for x in self.scheduledPowers]
+        vertices = [(utils.format_timestamp(x.timeInterval.startTime), x.value.marginalPrice, x.value.power) for x in self.activeVertices]
         local_asset_dict = {
             "name": self.name,
-            "description": self.description,
-            "transitionCosts": self.transitionCosts,
-            "location": self.location,
-            # "costParameters": list(self.costParameters),
-            "defaultPower": self.defaultPower,
-            #"defaultVertices": self.defaultVertices,
-            "engagementCost": self.engagementCost,
-            "maximumPower": self.maximumPower,
-            "minimumPower": self.minimumPower
+            "scheduled_power": scheduled_powers,
+            "vertices": vertices
         }
         return local_asset_dict

@@ -63,6 +63,7 @@
 import logging
 import json
 
+from .data_manager import *
 from .helpers import *
 from .measurement_type import MeasurementType
 from .interval_value import IntervalValue
@@ -1382,7 +1383,10 @@ class Neighbor(object):
                                                        record=int(v),
                                                        marginal_price=vertex.marginalPrice,
                                                        power=vertex.power,
-                                                       cost=0
+                                                       cost=0,
+                                                       neighbor_name=self.name,
+                                                       direction='prepared',
+                                                       market_name=market.name
                                                        )
                                      )
             _log.debug("prep_transactive_signal 4a end")
@@ -1421,11 +1425,19 @@ class Neighbor(object):
             return
 
         # Collect current transactive records concerning myTransactiveNode.
-        transactive_records = self.mySignal
+        # 210127DJH: Adding parameter 'market" to those sent to send_transactive_signal(). The market should be used to
+        #            make sure that only transactive records that are relevant to the current market are sent.
+        transactive_records = [x for x in self.mySignal if x.marketName == market.name]
 
         if len(transactive_records) == 0:  # No signal records are ready to send
             _log.warning("No transactive records were found. No transactive signal can be sent to %s." % self.name)
             return
+
+        # 210127DJH: These new parameters will help us keep track of record provenance.
+        for transactive_record in transactive_records:
+            transactive_record.direction = 'sent'
+            transactive_record.neighborName = self.name
+            transactive_record.marketName = market.name
 
         msg = json.dumps(transactive_records, default=json_econder)
         msg = json.loads(msg)
@@ -1453,7 +1465,7 @@ class Neighbor(object):
         # upon by this method (i.e., mySignal).
         self.sentSignal = self.mySignal
 
-    def receive_transactive_signal(self, this_transactive_node, curves=None):
+    def receive_transactive_signal(self, market, this_transactive_node, curves=None):
         # Receive and save transactive records from a transactive Neighbor.
         # this_transactive_node = Agent's TransactiveNode object
         #
@@ -1467,21 +1479,46 @@ class Neighbor(object):
                          'No signal is read.')
             return
 
+        if curves is None:
+            _log.warning('Received Transactive signal is None. ')
+            return
+
         # 201013DJH: The neighbor's list of received transactive records must be reinitialized so that it will not grow
         #            indefinitely. Only the latest records are relevant. See the end of method prep_transactive_signal()
         #            if more sophistication is warranted.
         self.receivedSignal = []
-        if curves is not None:
-            for curve in curves:
-                self.receivedSignal.append(TransactiveRecord(time_interval=curve['timeInterval'],
-                                                             record=int(curve['record']),
-                                                             marginal_price=float(curve['marginalPrice']),
-                                                             power=float(curve['power']),
-                                                             cost=float(curve['cost'])
-                                                             )
-                                           )
-        else:
-            _log.error("receive_transactive_signal: curves is None")
+        # 210126DJH: TODO: Robert or Shwetha, class curves must be updated with the new properties of TransactiveRecord
+        #            class, please, to keep data collection straight. The new properties are
+        #             (1) TransactiveRecord.neighborName  # text name of Neighbor object
+        #             (2) TransactiveRecord.direction  # Indication from among {'sent', 'received', or 'prepared'}
+        #             (3) TransactiveRecord.marketName  # text reference to Market.name.
+        #             IMPORTANT: The first two can be inferred, but the marketName must be confirmed to be the same.
+        #                        Otherwise, there will be confusion between market series between agents.
+        newly_received_records = []
+
+        for curve in curves:
+            _log.debug(f"curves market name: {curve['marketName']}")
+            market_name = curve['marketName']
+            newly_received_records.append(TransactiveRecord(time_interval=curve['timeInterval'],
+                                                            record=int(curve['record']),
+                                                            marginal_price=float(curve['marginalPrice']),
+                                                            power=float(curve['power']),
+                                                            cost=float(curve['cost']),
+                                                            neighbor_name=curve['neighborName'],
+                                                            direction=curve['direction'],
+                                                            market_name=market_name))
+        self.receivedSignal.extend(newly_received_records)
+
+        # 210127DJH: Save the newly received records to a formatted csv table.
+        append_table(obj=newly_received_records)
+
+        # 210127DJH: Trim the receviedSignal list to remove any expired markets and time intervals.
+        active_markets = [x for x in this_transactive_node.markets]
+        active_time_intervals = []
+        for active_market in active_markets:
+            active_time_intervals.extend(active_market.timeIntervals)
+        active_time_interval_names = [x.name for x in active_time_intervals]
+        self.receivedSignal = [x for x in self.receivedSignal if x.marketName in active_time_interval_names]
 
     def update_costs(self, market):
         """
@@ -1821,13 +1858,16 @@ class Neighbor(object):
         return vertices
 
     def getDict(self):
+        scheduled_powers = [(utils.format_timestamp(x.timeInterval.startTime), x.value) for x in self.scheduledPowers]
+        received_signal = [(x.timeInterval, x.marginalPrice, x.power) for x in self.receivedSignal]
+        sent_signal = [(x.timeInterval, x.marginalPrice, x.power) for x in self.sentSignal]
+
         neighbor_dict = {
-            "convergenceThreshold": self.convergenceThreshold,
-            "description": self.description,
-            "effectiveImpedance": self.effectiveImpedance,
-            "friend": self.friend,
             "isTransactive": self.transactive,
-            "name": self.name
+            "name": self.name,
+            "scheduled_power": scheduled_powers,
+            "received_signal": received_signal,
+            "sent_signal": sent_signal
         }
 
         return neighbor_dict
@@ -1835,3 +1875,5 @@ class Neighbor(object):
 
 if __name__ == '__main__':
     nm = Neighbor()
+
+
