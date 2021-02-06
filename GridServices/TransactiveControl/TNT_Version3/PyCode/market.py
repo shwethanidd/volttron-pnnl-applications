@@ -1476,10 +1476,8 @@ class Market(object):
         # TODO: This has evolved to be a stand-alone, static function. Change to a static function.
         # Initialize a list of marginal prices mps at which vertices will be created.
         marginal_price_list = []
-        #_log.debug("market name {} sum_vertices: 1 a".format(self.name))
         # Index through the active neighbor objects
         for i in range(len(my_transactive_node.neighbors)):
-            #_log.debug("market name {} sum_vertices: 1 b")
             neighbor = my_transactive_node.neighbors[i]
 
             # Jump out of this iteration if neighbor model nm happens to be the "object to exclude"

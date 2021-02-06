@@ -227,7 +227,8 @@ class Auction(Market):
                 #                                                                                                downstream_agent.name,
                 #                                                                                                missing_interval_names))
                 # and call on the downstream agent model to try and receive the signal again:
-                downstream_agent.receive_transactive_signal(my_transactive_node, downstream_agent.receivedCurves)
+                _log.info(f"Before calling receive_transactive_signal: {missing_interval_names}, {downstream_agent.name}")
+                downstream_agent.receive_transactive_signal(self, my_transactive_node, downstream_agent.receivedCurves)
 
         # If all expected bids have been received from downstream agents, have the downstream neighbor models update
         # their vertices and schedule themselves. The result of this will be an updated set of active vertices for each
@@ -316,7 +317,7 @@ class Auction(Market):
                 all_received = False
 
                 # Call on the upstream agent model to try and receive the signal again.
-                upstream_agent.receive_transactive_signal(my_transactive_node, upstream_agent.receivedCurves)
+                upstream_agent.receive_transactive_signal(self, my_transactive_node, upstream_agent.receivedCurves)
 
         # If offers have been received for all active market time intervals from the upstream agent,
         # 200618DJH: I think this is correct up to this point, but I had left out some very important steps of the
