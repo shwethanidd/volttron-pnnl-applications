@@ -483,4 +483,4 @@ class BulkSupplier_dc(Neighbor):
                 # in the indexed time interval
                 self.activeVertices.extend(interval_values)
         av = [(x.timeInterval.name, x.value.marginalPrice, x.value.power) for x in self.activeVertices]
-        _log.debug("{} bulk_supplier dc model active vertices are: {}".format(self.name, av))
+        #_log.debug("{} bulk_supplier dc model active vertices are: {}".format(self.name, av))

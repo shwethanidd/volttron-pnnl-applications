@@ -228,10 +228,11 @@ class LocalAsset(object):
         # time_interval_values = [t.startTime for t in time_intervals]
         # self.scheduledPowers = [x for x in self.scheduledPowers if x.timeInterval.startTime in time_interval_values]
 
-        for power in self.scheduledPowers:
-            _log.debug("schedule_power Market {}, time interval: {}, power value: {} ".format(power.market.name,
-                                                                                              power.timeInterval.startTime,
-                                                                                              power.value))
+        #for power in self.scheduledPowers:
+        #    _log.debug("schedule_power Market {}, time interval: {}, power value: {} ".format(power.market.name,
+        #                                                                                      power.timeInterval.startTime,
+        #                                                                                      power.value))
+
         # Sort by function lambda, assumed to be a helper function pointing to start times
         time_intervals.sort(key=lambda x: x.startTime)
 
@@ -252,8 +253,8 @@ class LocalAsset(object):
             #   default_value = self.default_powers[i] if self.default_powers[i] is not None else self.defaultPower
 
             if iv is None:  # A scheduled power does not exist for the indexed time interval
-                _log.debug("schedule_power Market {}, time interval: {}, iv is None".format(market.name,
-                                                                                         time_interval.startTime))
+                #_log.debug("schedule_power Market {}, time interval: {}, iv is None".format(market.name,
+                #                                                                         time_interval.startTime))
                 # Create an interval value and assign the default value
                 iv = IntervalValue(self, time_interval, market, MeasurementType.ScheduledPower, default_value)
 
@@ -694,7 +695,7 @@ class LocalAsset(object):
         self.activeVertices = [x for x in self.activeVertices if x.market.marketState != MarketState.Expired]
 
         av = [(x.timeInterval.name, x.value.marginalPrice, x.value.power) for x in self.activeVertices]
-        _log.debug("{} asset model active vertices are: {}".format(self.name, av))
+        #_log.debug("{} asset model active vertices are: {}".format(self.name, av))
 
     def get_extended_prices(self, market):  # 200120DJH This does not, after all, require a TransactiveNode parameter.
         """

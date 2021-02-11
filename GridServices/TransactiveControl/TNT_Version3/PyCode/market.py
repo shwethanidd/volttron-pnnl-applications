@@ -75,11 +75,13 @@ import os
 from .market_types import MarketTypes
 from .method import Method
 from warnings import warn
-#from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 from .data_manager import *
 
 utils.setup_logging()
 _log = logging.getLogger(__name__)
+
+DEBUG = 1
 
 
 class Market(object):
@@ -88,73 +90,73 @@ class Market(object):
     # with which new TimeIntervals are created.
 
     def __init__(self,
-                    activation_lead_time=timedelta(hours=0),
-                    commitment=False,
-                    default_price=0.05,
-                    delivery_lead_time=timedelta(hours=0),
-                    duality_gap_threshold=0.01,
-                    future_horizon=timedelta(hours=24),
-                    initial_market_state=MarketState.Inactive,
-                    interval_duration=timedelta(hours=1),
-                    intervals_to_clear=1,
-                    market_clearing_interval=timedelta(hours=1),
-                    market_clearing_time=None,
-                    market_lead_time=timedelta(hours=0),
-                    market_order=1,
-                    market_series_name='Market Series',
-                    market_to_be_refined=None,
-                    market_type=MarketTypes.unknown,
-                    method=Method.Interpolation,
-                    name='',
-                    next_market_clearing_time=None,
-                    negotiation_lead_time=timedelta(hours=0),
-                    prior_market_in_series=None,
-                    real_time_duration=15):
+                 activation_lead_time=timedelta(hours=0),
+                 commitment=False,
+                 default_price=0.05,
+                 delivery_lead_time=timedelta(hours=0),
+                 duality_gap_threshold=0.01,
+                 future_horizon=timedelta(hours=24),
+                 initial_market_state=MarketState.Inactive,
+                 interval_duration=timedelta(hours=1),
+                 intervals_to_clear=1,
+                 market_clearing_interval=timedelta(hours=1),
+                 market_clearing_time=None,
+                 market_lead_time=timedelta(hours=0),
+                 market_order=1,
+                 market_series_name='Market Series',
+                 market_to_be_refined=None,
+                 market_type=MarketTypes.unknown,
+                 method=Method.Interpolation,
+                 name='',
+                 next_market_clearing_time=None,
+                 negotiation_lead_time=timedelta(hours=0),
+                 prior_market_in_series=None,
+                 real_time_duration=15):
 
         # These properties are relatively static and may be received as parameters:
-        self.activationLeadTime = activation_lead_time      # [timedelta] Time in market state "Active"
-        self.commitment = commitment                        # [Boolean] If true, scheduled power & price are commitments
-        self.defaultPrice = default_price                   # [$/kWh] Static default price assignment
-        self.deliveryLeadTime = delivery_lead_time          # [timedelta] Time in market state "DeliveryLead"
-        self.dualityGapThreshold = duality_gap_threshold    # [dimensionless]; 0.01 = 1%
-        self.futureHorizon = future_horizon                 # Future functionality: future of price-discovery relevance
-        self.initialMarketState = initial_market_state      # [MarketState] New market's initial state
-        self.intervalDuration = interval_duration           # [timedelta] Duration of this market's time intervals
-        self.intervalsToClear = intervals_to_clear          # [int] Market intervals to be cleared by this market object
+        self.activationLeadTime = activation_lead_time  # [timedelta] Time in market state "Active"
+        self.commitment = commitment  # [Boolean] If true, scheduled power & price are commitments
+        self.defaultPrice = default_price  # [$/kWh] Static default price assignment
+        self.deliveryLeadTime = delivery_lead_time  # [timedelta] Time in market state "DeliveryLead"
+        self.dualityGapThreshold = duality_gap_threshold  # [dimensionless]; 0.01 = 1%
+        self.futureHorizon = future_horizon  # Future functionality: future of price-discovery relevance
+        self.initialMarketState = initial_market_state  # [MarketState] New market's initial state
+        self.intervalDuration = interval_duration  # [timedelta] Duration of this market's time intervals
+        self.intervalsToClear = intervals_to_clear  # [int] Market intervals to be cleared by this market object
         self.marketClearingInterval = market_clearing_interval  # [timedelta] Time between successive market clearings
-        self.marketClearingTime = market_clearing_time      # [datetime] Time that a market object clears
-        self.marketLeadTime = market_lead_time              # [timedelta] Time in market state "MarketLead"
-        self.marketOrder = market_order                     # [pos. integer] Ordering of sequential markets  (Unused)
-        self.marketSeriesName = market_series_name          # Successive market series objects share this name root
-        self.marketToBeRefined = market_to_be_refined       # [Market] Pointer to market to be refined or corrected
-        self.marketType = market_type                       # [MarketTypes] enumeration
-        self.method = Method.Interpolation                  # Solution method {1: subgradient, 2: interpolation}
-        self.name = name                                    # This market object's name. Use market series name as root
-        self.negotiationLeadTime = negotiation_lead_time    # [timedelta] Time in market state "Negotiation"
+        self.marketClearingTime = market_clearing_time  # [datetime] Time that a market object clears
+        self.marketLeadTime = market_lead_time  # [timedelta] Time in market state "MarketLead"
+        self.marketOrder = market_order  # [pos. integer] Ordering of sequential markets  (Unused)
+        self.marketSeriesName = market_series_name  # Successive market series objects share this name root
+        self.marketToBeRefined = market_to_be_refined  # [Market] Pointer to market to be refined or corrected
+        self.marketType = market_type  # [MarketTypes] enumeration
+        self.method = Method.Interpolation  # Solution method {1: subgradient, 2: interpolation}
+        self.name = name  # This market object's name. Use market series name as root
+        self.negotiationLeadTime = negotiation_lead_time  # [timedelta] Time in market state "Negotiation"
         self.nextMarketClearingTime = next_market_clearing_time  # [datetime] Time of next market object's clearing
-        self.priorMarketInSeries = prior_market_in_series   # [Market] Pointer to preceding market in this market series
+        self.priorMarketInSeries = prior_market_in_series  # [Market] Pointer to preceding market in this market series
 
         # These are dynamic properties that are assigned in code and should not be manually configured:
-        self.activeVertices = []                            # [IntervalValue]; values are [vertices]
-        self.blendedPrices1 = []                            # [IntervalValue] (future functionality)
-        self.blendedPrices2 = []                            # [IntervalValue] (future functionality)
+        self.activeVertices = []  # [IntervalValue]; values are [vertices]
+        self.blendedPrices1 = []  # [IntervalValue] (future functionality)
+        self.blendedPrices2 = []  # [IntervalValue] (future functionality)
         self.converged = False
-        self.dualCosts = []                                 # [IntervalValue]; Values are [$]
-        self.isNewestMarket = False                         # [Boolean] Flag held by only newest market in market series
-        self.marketState = MarketState.Inactive             # [MarketState] Current market state
-        self.marginalPrices = []                            # [IntervalValue]; Values are [$/kWh]
-        self.netPowers = []                                 # [IntervalValue]; Values are [avg.kW]
-#        average_price = 0.06                                # Initialization [$/kWh]
-        average_price = 0.035 # Close to real time
-        st_dev_price = 0.01                                 # Initialization [$/kWh]
+        self.dualCosts = []  # [IntervalValue]; Values are [$]
+        self.isNewestMarket = False  # [Boolean] Flag held by only newest market in market series
+        self.marketState = MarketState.Inactive  # [MarketState] Current market state
+        self.marginalPrices = []  # [IntervalValue]; Values are [$/kWh]
+        self.netPowers = []  # [IntervalValue]; Values are [avg.kW]
+        #        average_price = 0.06                                # Initialization [$/kWh]
+        average_price = 0.035  # Close to real time
+        st_dev_price = 0.01  # Initialization [$/kWh]
         self.priceModel = [average_price, st_dev_price] * 24  # Each hour's tuplet average and st. dev. price.
-        self.productionCosts = []                           # [IntervalValue]; Values are [$]
-        self.reconciled = False                             # [Boolean] Convergence flag
-        self.timeIntervals = []                             # [TimeInterval] Current list of active time intervals
-        self.totalDemand = []                               # [IntervalValue]; Values are [avg.kW]
-        self.totalDualCost = 0.0                            # [$]
-        self.totalGeneration = []                           # [IntervalValue]; Values are [avg.kW]
-        self.totalProductionCost = 0.0                      # [$]
+        self.productionCosts = []  # [IntervalValue]; Values are [$]
+        self.reconciled = False  # [Boolean] Convergence flag
+        self.timeIntervals = []  # [TimeInterval] Current list of active time intervals
+        self.totalDemand = []  # [IntervalValue]; Values are [avg.kW]
+        self.totalDualCost = 0.0  # [$]
+        self.totalGeneration = []  # [IntervalValue]; Values are [avg.kW]
+        self.totalProductionCost = 0.0  # [$]
 
         self.new_data_signal = False
         self.deliverylead_schedule_power = False
@@ -173,15 +175,19 @@ class Market(object):
         :return: None
         """
         current_time = Timer.get_cur_time()
-#        _log.debug("Market name: {}, current_time: {}, marketState: {}".format(self.name, current_time, self.marketState))
+        if DEBUG:
+            _log.debug(
+            "Market name: {}, current_time: {}, marketState: {}".format(self.name, current_time, self.marketState))
 
         reconcile_start_time = self.marketClearingTime + self.deliveryLeadTime \
                                + self.intervalsToClear * self.intervalDuration
-#        _log.debug("Market method: {}, self.marketClearingTime: {}, self.deliveryLeadTime: {}, self.intervalsToClear: {}, self.intervalDuration: {}".format(self.name,
-#                                                                                                                                                            self.marketClearingTime,
-#                                                                                                                                                            self.deliveryLeadTime,
-#                                                                                                                                                            self.intervalsToClear,
-#                                                                                                                                                            self.intervalDuration))
+        if DEBUG:
+            _log.debug("Market method: {}, self.marketClearingTime: {}, self.deliveryLeadTime: {}, self.intervalsToClear: {}, self.intervalDuration: {}".format(
+                self.name,
+                self.marketClearingTime,
+                self.deliveryLeadTime,
+                self.intervalsToClear,
+                self.intervalDuration))
 
         # EVENT 1A: % A NEW MARKET OBJECT BECOMES ACTIVE ***************************************************************
         # This is the instantiation of a market object in market state "Active." This transition occurs at a time when
@@ -196,26 +202,27 @@ class Market(object):
         if self.isNewestMarket is True:
             future_clearing_time = current_time + self.activationLeadTime \
                                    + self.negotiationLeadTime + self.marketLeadTime
- #           _log.debug("Market nextMarketClearingTime: {}, future_clearing_time: {}".format(self.nextMarketClearingTime,
- #                                                                                                 future_clearing_time))
+            if DEBUG:
+                _log.debug("Market nextMarketClearingTime: {}, future_clearing_time: {}".format(self.nextMarketClearingTime,
+                                                                                            future_clearing_time))
             if self.nextMarketClearingTime < future_clearing_time:
-                _log.info("spawning new markets")
                 self.spawn_markets(my_transactive_node, self.nextMarketClearingTime)
                 self.isNewestMarket = False
                 # 210118DJH: New flag. Set true when responsibilities in market state are completed.
                 self._stateIsCompleted = True
-
-  #      _log.info("Market name: {}, self.marketState: {}".format(self.name, self.marketState))
+            if DEBUG:
+                _log.info("Market name: {}, self.marketState: {}".format(self.name, self.marketState))
 
         # EVENT 1B: TRANSITION FROM INACTIVE TO ACTIVE STATE ***********************************************************
         if self.marketState == MarketState.Inactive:
             activation_start_time = self.marketClearingTime - self.marketLeadTime - self.negotiationLeadTime \
                                     - self.activationLeadTime
-            _log.debug("In Market name: {}, Market State: {}, Current time: {}, activation_start_time: {}".format(
-                                                                                                self.name,
-                                                                                                self.marketState,
-                                                                                                current_time,
-                                                                                                activation_start_time))
+            if DEBUG:
+                _log.debug("In Market name: {}, Market State: {}, Current time: {}, activation_start_time: {}".format(
+                self.name,
+                self.marketState,
+                current_time,
+                activation_start_time))
             if current_time >= activation_start_time:
                 # Change the market state to "Active."
                 self.marketState = MarketState.Active
@@ -243,20 +250,23 @@ class Market(object):
 
         # 210118DJH. New flag. Do not transition out of a state until it is completed.
         if self.marketState == MarketState.Active and self._stateIsCompleted is True:
-            _log.debug("In Market name: {}, Market State: {}, Current time: {}, marketClearingTime: {}, marketLeadTime: {}, negotiationLeadTime:{}, ".format(
-                self.name,
-                self.marketState,
-                current_time,
-                self.marketClearingTime,
-                self.marketLeadTime,
-                self.negotiationLeadTime))
+            if DEBUG:
+                _log.debug(
+                "In Market name: {}, Market State: {}, Current time: {}, marketClearingTime: {}, marketLeadTime: {}, negotiationLeadTime:{}, ".format(
+                    self.name,
+                    self.marketState,
+                    current_time,
+                    self.marketClearingTime,
+                    self.marketLeadTime,
+                    self.negotiationLeadTime))
 
             negotiation_start_time = self.marketClearingTime - self.marketLeadTime - self.negotiationLeadTime
-            _log.debug(
+            if DEBUG:
+                _log.debug(
                 "In Market name: {} In Market State: {}, current_time: {}, negotiation_start_time: {}".format(self.name,
-                                                                                                            self.marketState,
-                                                                                                            current_time,
-                                                                                                            negotiation_start_time))
+                                                                                                              self.marketState,
+                                                                                                              current_time,
+                                                                                                              negotiation_start_time))
 
             if current_time >= negotiation_start_time:
                 # Change the market state to "Negotiation."
@@ -273,7 +283,8 @@ class Market(object):
         # These are the actions while in the "Negotiation" market state.
 
         if self.marketState == MarketState.Negotiation and self._stateIsCompleted is not True:
-            _log.debug("In Market name: {} In Market State: {}".format(self.name, self.marketState))
+            if DEBUG:
+                _log.debug("In Market name: {} In Market State: {}".format(self.name, self.marketState))
             # Place actions to be completed during this market state in the following method. The method may be
             # overwritten by child classes of class Market. Note that the actions during this state may be made
             # dependent upon a convergence flag.
@@ -289,10 +300,11 @@ class Market(object):
         if self.marketState == MarketState.Negotiation and self._stateIsCompleted is True:
 
             market_lead_start_time = self.marketClearingTime - self.marketLeadTime
-            _log.debug(f"Market State: {self.marketState}, Type of current time: {type(current_time)}, Type of market_lead_start_time: {type(market_lead_start_time)}")
+            if DEBUG:
+                _log.debug(
+                f"Market State: {self.marketState}, Type of current time: {type(current_time)}, Type of market_lead_start_time: {type(market_lead_start_time)}")
 
             if current_time >= market_lead_start_time:
-
                 # Change the market state to "MarketLead."
                 self.marketState = MarketState.MarketLead
 
@@ -307,7 +319,6 @@ class Market(object):
         # These are the actions while in the "MarketLead" market state.
 
         if self.marketState == MarketState.MarketLead and self._stateIsCompleted is not True:
-
             #  Specify actions for the market state "MarketLead" in this following method. The method may be
             #  overwritten by child classes of class Market.
             # 210118DJH: NOTE: Flag "_stateIsComplete" must be set true after the market's responsibilities have been
@@ -318,7 +329,8 @@ class Market(object):
         # This is the transition from "MarketLead" to "DeliveryLead" market states.
         # 210118DJH: Adding flag. No state transition should be allowed unless the prior state is done.
         if self.marketState == MarketState.MarketLead and self._stateIsCompleted is True:
-            _log.debug("In Market name: {}, Market State: {}, Current time: {}, marketClearingTime: {}".format(
+            if DEBUG:
+                _log.debug("In Market name: {}, Market State: {}, Current time: {}, marketClearingTime: {}".format(
                 self.name,
                 self.marketState,
                 current_time,
@@ -326,16 +338,19 @@ class Market(object):
             # This transition is simply the market clearing time.
             delivery_lead_start_time = self.marketClearingTime
 
-            _log.debug(
-                "In Market name: {} In Market State: {}, current_time: {}, delivery_lead_start_time: {}".format(self.name,
-                                                                                                              self.marketState,
-                                                                                                              current_time,
-                                                                                                              delivery_lead_start_time))
+            if DEBUG:
+                _log.debug(
+                "In Market name: {} In Market State: {}, current_time: {}, delivery_lead_start_time: {}".format(
+                    self.name,
+                    self.marketState,
+                    current_time,
+                    delivery_lead_start_time))
 
-            _log.debug(f"Market State: {self.marketState}, Type of current time: {type(current_time)}, Type of delivery_lead_start_time: {type(delivery_lead_start_time)}")
+            if DEBUG:
+                _log.debug(
+                f"Market State: {self.marketState}, Type of current time: {type(current_time)}, Type of delivery_lead_start_time: {type(delivery_lead_start_time)}")
 
             if current_time >= delivery_lead_start_time:
-
                 # Set the market state to "DeliveryLead."
                 self.marketState = MarketState.DeliveryLead
 
@@ -349,7 +364,6 @@ class Market(object):
         # These are the actions while in the "DeliveryLead" market state.
 
         if self.marketState == MarketState.DeliveryLead and self._stateIsCompleted is not True:
-
             # Place actions in this following method if they are to occur during market state "DeliveryLead." This
             # method may be overwritten by child classes of class Market.
             # 210118DJH: NOTE: Flag "_stateIsComplete" must be set true after the market's responsibilities have been
@@ -364,14 +378,17 @@ class Market(object):
         if self.marketState == MarketState.DeliveryLead and self._stateIsCompleted is True:
 
             delivery_start_time = self.marketClearingTime + self.deliveryLeadTime
-            _log.debug("In Market name: {} In Market State: {}, current_time: {}, delivery_start_time: {}".format(self.name,
-                                                                                                                   self.marketState,
-                                                                                                                   current_time,
-                                                                                                                   delivery_start_time))
+            if DEBUG:
+                _log.debug(
+                "In Market name: {} In Market State: {}, current_time: {}, delivery_start_time: {}".format(self.name,
+                                                                                                           self.marketState,
+                                                                                                           current_time,
+                                                                                                           delivery_start_time))
 
-            _log.debug(f"Market State: {self.marketState}, Type of current time: {type(current_time)}, Type of delivery_start_time: {type(delivery_start_time)}")
+            if DEBUG:
+                _log.debug(
+                f"Market State: {self.marketState}, Type of current time: {type(current_time)}, Type of delivery_start_time: {type(delivery_start_time)}")
             if current_time >= delivery_start_time:
-
                 # Change the market state from "DeliverLead" to "Delivery."
                 self.marketState = MarketState.Delivery
 
@@ -385,7 +402,6 @@ class Market(object):
         # These are the actions while in the "Delivery" market state.
 
         if self.marketState == MarketState.Delivery and self._stateIsCompleted is not True:
-
             # Place any actions to be conducted in market state "Delivery" in this following method. The method may be
             # overwritten by child classes of class Market.
             # 210118DJH: NOTE: Flag "_stateIsComplete" must be set true after the market's responsibilities have been
@@ -398,25 +414,30 @@ class Market(object):
         # market object's market intervals and an additional delivery lead time have expired after the market clears.
         # 210118DJH: Adding flag. No state transition should be allowed unless the prior state is completed.
         if self.marketState == MarketState.Delivery and self._stateIsCompleted is True:
-            _log.debug("In Market name: {} In Market State: {}, marketClearingTime: {}, deliveryLeadTime: {}, intervalsToClear: {}, intervalDuration: {}".format(
-                self.name,
-                self.marketState,
-                self.marketClearingTime,
-                self.deliveryLeadTime,
-                self.intervalsToClear,
-                self.intervalDuration))
+            if DEBUG:
+                _log.debug(
+                "In Market name: {} In Market State: {}, marketClearingTime: {}, deliveryLeadTime: {}, intervalsToClear: {}, intervalDuration: {}".format(
+                    self.name,
+                    self.marketState,
+                    self.marketClearingTime,
+                    self.deliveryLeadTime,
+                    self.intervalsToClear,
+                    self.intervalDuration))
 
             reconcile_start_time = self.marketClearingTime + self.deliveryLeadTime \
-                               + self.intervalsToClear * self.intervalDuration
-            _log.debug("In Market name: {} In Market State: {}, current_time: {}, reconcile_start_time: {}".format(self.name,
-                                                                                                                   self.marketState,
-                                                                                                                   current_time,
-                                                                                                                   reconcile_start_time))
-            if current_time >= reconcile_start_time:
+                                   + self.intervalsToClear * self.intervalDuration
+            if DEBUG:
                 _log.debug("In Market name: {} In Market State: {}, current_time: {}, reconcile_start_time: {}".format(self.name,
-                                                                                                                       self.marketState,
-                                                                                                                       current_time,
-                                                                                                                       reconcile_start_time))
+                                                                                                            self.marketState,
+                                                                                                            current_time,
+                                                                                                            reconcile_start_time))
+            if current_time >= reconcile_start_time:
+                if DEBUG:
+                    _log.debug("In Market name: {} In Market State: {}, current_time: {}, reconcile_start_time: {}".format(
+                    self.name,
+                    self.marketState,
+                    current_time,
+                    reconcile_start_time))
                 # Change the market state to "Reconcile."
                 self.marketState = MarketState.Reconcile
 
@@ -430,7 +451,8 @@ class Market(object):
         # These are the actions while in the "DeliveryLead" market state.
 
         if self.marketState == MarketState.Reconcile and self._stateIsCompleted is not True:
-            _log.debug("In Market name: {} In Market State: {}".format(self.name, self.marketState))
+            if DEBUG:
+                _log.debug("In Market name: {} In Market State: {}".format(self.name, self.marketState))
             # Place actions in this following method if they should occur during market state "Reconcile." This method
             # may be overwritten by children of the Market class.
             # 210118DJH: NOTE: Flag "_stateIsComplete" must be set true after the market's responsibilities have been
@@ -445,7 +467,6 @@ class Market(object):
             # 210118DJH: The use of flag "reconciled" is redundant now that flag "stateIsCompleted" is available.
             #            TODO: Replace instanced of flag "reconciled" by new flag "stateIsCompleted."
             if self.reconciled is True:
-
                 # Change the market state to "Expired".
                 self.marketState = MarketState.Expired
 
@@ -461,7 +482,8 @@ class Market(object):
         # classes.
 
         if self.marketState == MarketState.Expired and self._stateIsCompleted is not True:
-            _log.debug("Expired. In Market name: {} In Market State: {}".format(self.name,
+            if DEBUG:
+                _log.debug("Expired. In Market name: {} In Market State: {}".format(self.name,
                                                                                 self.marketState))
             # Delete market intervals that are defined by this market object.
             self.timeIntervals = []
@@ -510,9 +532,9 @@ class Market(object):
         new_market.marketClearingInterval = self.marketClearingInterval
         new_market.marketOrder = self.marketOrder
         new_market.method = self.method
-        new_market.priceModel = self.priceModel             # It must be clear that this is a copy, not a reference.
+        new_market.priceModel = self.priceModel  # It must be clear that this is a copy, not a reference.
         new_market.marketState = MarketState.Active
-        new_market.isNewestMarket = True                    # This new market now assumes the flag as newest market
+        new_market.isNewestMarket = True  # This new market now assumes the flag as newest market
         new_market.priorMarketInSeries = self
 
         # The market instance is named by concatenating the market name and its market clearing time. There MUST be a
@@ -550,7 +572,7 @@ class Market(object):
         :param my_transactive_node: transactive node object--this agent
         :return: None
         """
-        #pass
+        # pass
         # 210118DJH: NOTE: Flag "_stateIsComplete" must be set true after the market's responsibilities have been
         #            completed in this next method or its replacements.
         self._stateIsCompleted = True
@@ -731,7 +753,7 @@ class Market(object):
         # Append data for local assets:
         for x in range(len(my_transactive_node.localAssets)):
             vertices = [y for y in my_transactive_node.localAssets[x].activeVertices
-                                                                        if y.timeInterval.market == self]
+                        if y.timeInterval.market == self]
 
             for z in range(len(vertices)):
                 datum = [my_transactive_node.localAssets[x].name,
@@ -743,7 +765,7 @@ class Market(object):
         # Append data for neighbor data:
         for x in range(len(my_transactive_node.neighbors)):
             vertices = [y for y in my_transactive_node.neighbors[x].activeVertices
-                                                                        if y.timeInterval.market == self]
+                        if y.timeInterval.market == self]
 
             for z in range(len(vertices)):
                 datum = [my_transactive_node.neighbors[x].name,
@@ -772,13 +794,14 @@ class Market(object):
 
         for x in self.marginalPrices:  #
             datum = [self.name,
-                      x.timeInterval.startTime,
-                      x.value]
+                     x.timeInterval.startTime,
+                     x.value]
             price_data.append(datum)
 
         filename = self.name + ".csv"
         full_filename = data_folder + filename
-        _log.debug("while_in_reconcile: write price data into csv: {}".format(full_filename))
+        if DEBUG:
+            _log.debug("while_in_reconcile: write price data into csv: {}".format(full_filename))
 
         my_file = open(full_filename, 'w+')
         with my_file:
@@ -813,7 +836,7 @@ class Market(object):
 
             if new_price is not None:
                 avg_price = ((k - 1.0) * avg_price + new_price) / k
-                sd_price = (((k - 1.0) * sd_price**2 + (avg_price - new_price)**2) / k)**0.5
+                sd_price = (((k - 1.0) * sd_price ** 2 + (avg_price - new_price) ** 2) / k) ** 0.5
                 self.priceModel[2 * h] = avg_price
                 self.priceModel[2 * h + 1] = sd_price
 
@@ -854,7 +877,7 @@ class Market(object):
         for time_interval in self.timeIntervals:
             # Find and delete existing aggregate active vertices in the indexed time interval. They will be recreated.
             self.activeVertices = [x for x in self.activeVertices
-                                                                if x.timeInterval.startTime != time_interval.startTime]
+                                   if x.timeInterval.startTime != time_interval.startTime]
 
             # Call the utility sum_vertices to recreate the aggregate vertices in the indexed time interval. (This
             # method is separated out because it will be used by other methods.)
@@ -887,22 +910,17 @@ class Market(object):
         # Gather the active time intervals in this market.
         time_intervals = self.timeIntervals  # TimeIntervals
 
-        _log.debug("self.method: {}".format(self.method))
-        #if self.method == Method.Interpolation:
+        # if self.method == Method.Interpolation:
         if self.method == 2:
-            _log.debug("self.method: {}, assigning system vertices".format(self.method))
             self.assign_system_vertices(my_transactive_node)
             # TODO: Un-comment this next debug code.
             av = [(x.timeInterval.name, x.value.marginalPrice, x.value.power) for x in self.activeVertices]
-            _log.debug("{} market active vertices are: {}".format(self.name, av))
 
-        for price in self.marginalPrices:
-            _log.debug("BALANCE: before for loop: {}".format(price.value))
         # Index through active time intervals.
         for i in range(len(time_intervals)):
             # Find the marginal price interval value for the corresponding indexed time interval.
             marginal_price = find_obj_by_ti(self.marginalPrices, time_intervals[i])
-            _log.debug("Initial marginal price: {}".format(marginal_price))
+
             # Extract its  marginal price value as a trial clearing price (that may be replaced).
             # 200716DJH: There is a problem trying to test length of marginal_price, which is an IntervalValue. This was
             #            not found when marginal_price = None, but an exception is thrown if there already exists a
@@ -921,8 +939,7 @@ class Market(object):
                 cleared_marginal_price = marginal_price.value  # [$/kWh]
 
             if self.method == 1:
-                _log.debug("self.method: {}, Subgradient condition".format(self.method))
-            #if self.method == Method.Subgradient:
+                # if self.method == Method.Subgradient:
                 # Find the net power corresponding to the indexed time interval.
                 net_power = find_obj_by_ti(self.netPowers, time_intervals[i])
                 total_generation = find_obj_by_ti(self.totalGeneration, time_intervals[i])
@@ -933,11 +950,10 @@ class Market(object):
                 # Update the marginal price using sub-gradient search.
                 cleared_marginal_price = cleared_marginal_price - (net_power * 1e-1) / (10 + k)  # [$/kWh]
 
-            elif self.method == 2: #self.method == Method.Interpolation:
-                _log.debug("self.method: {}, Interpolation condition".format(self.method))
+            elif self.method == 2:  # self.method == Method.Interpolation:
                 # Get the indexed active system vertices.
                 active_vertices = [x.value for x in self.activeVertices
-                                                            if x.timeInterval.startTime == time_intervals[i].startTime]
+                                   if x.timeInterval.startTime == time_intervals[i].startTime]
 
                 # Order the system vertices in the indexed time interval by price and power.
                 active_vertices = order_vertices(active_vertices)
@@ -964,7 +980,9 @@ class Market(object):
 
                     marginal_price_range = upper_active_vertex.marginalPrice - lower_active_vertex.marginalPrice
                     if power_range == 0:
-                        _log.warning('There is no power range to interpolate. Marginal price is not unique in {}'.format(time_intervals[i].name))
+                        _log.warning(
+                            'There is no power range to interpolate. Marginal price is not unique in {}'.format(
+                                time_intervals[i].name))
                         err_msg = "At {}, power range is 0".format(time_intervals[i].name)
                     cleared_marginal_price = - marginal_price_range * lower_active_vertex.power / power_range \
                                              + lower_active_vertex.marginalPrice
@@ -981,7 +999,6 @@ class Market(object):
                     #                                                [(tis[i].name, x.marginalPrice, x.power)
                     #                                                 for x in av]))
 
-
                     self.converged = False
                     return
             # Regardless of the method used, assign the cleared marginal price to the marginal price value for the
@@ -989,10 +1006,7 @@ class Market(object):
             # 200205DJH: The intention here is that the marginal price is the actual IntervalValue object. Check that
             #            it is assigned properly in its market list.
             marginal_price.value = cleared_marginal_price  # [$/kWh]
-            _log.debug("BALANCE Final marginal price: {}".format(marginal_price.value))
 
-        for price in self.marginalPrices:
-            _log.debug("BALANCE: after for loop: {}".format(price.value))
 
     def old_balance(self, mtn):
         """
@@ -1239,12 +1253,12 @@ class Market(object):
 
         # Find the last starting time in the market delivery period.
         last_starting_time = starting_times[0] + self.intervalDuration * (self.intervalsToClear - 1)
-        _log.info("starting_times: {0}, last_starting_time: {1}".format(starting_times,last_starting_time ))
+        _log.info("starting_times: {0}, last_starting_time: {1}".format(starting_times, last_starting_time))
 
         # Assign the remaining interval start times in the market delivery period.
         while starting_times[-1] < last_starting_time:
             starting_times.append(starting_times[-1] + self.intervalDuration)
-        _log.info("After starting_times: {0}, ".format(starting_times ))
+        _log.info("After starting_times: {0}, ".format(starting_times))
         # Index through the needed TimeIntervals based on their start times.
         for starting_time in starting_times:
 
@@ -1300,7 +1314,7 @@ class Market(object):
         OUTPUTS:
            populates list of active marginal prices (see class IntervalValue)
         """
-        #_log.info("ACTIVE Time intervals {}".format(self.timeIntervals.startTime))
+        # _log.info("ACTIVE Time intervals {}".format(self.timeIntervals.startTime))
 
         # Index through active time intervals ti
         for time_interval in self.timeIntervals:
@@ -1324,15 +1338,13 @@ class Market(object):
                         and self.priorMarketInSeries is not None \
                         and self.intervalsToClear > 1 \
                         and marginal_price is None:
-                    _log.debug("Market name: {}, check_marginal_price: Method 2".format(self.name))
+
                     # Look for only the market just prior to this one, based on its market clearing time.
                     prior_market_in_series = self.priorMarketInSeries
 
                     # Gather the marginal prices from the most recent similar market.
                     prior_marginal_prices = prior_market_in_series.marginalPrices
 
-                    _log.debug("Market name: {}, len(prior_marginal_prices): {} Method 2".format(self.name,
-                                                                                              len(prior_marginal_prices)))
                     # If a valid marginal price is found in the most recent market,
                     # 200902DJH: This next if statement is problematic because, if false, the elif logic is not used as
                     # it should be. The fix is to use if statements without elif with continue commands after any valid
@@ -1353,7 +1365,7 @@ class Market(object):
                             '''
 
                             if start_time <= time_interval.startTime < end_time:
-                                #_log.debug("Market name: {}, check_marginal_price: {} found time between start and end")
+                                # _log.debug("Market name: {}, check_marginal_price: {} found time between start and end")
                                 # then capture this value for the new marginal price in this time interval,
                                 marginal_price = prior_marginal_price.value
 
@@ -1376,7 +1388,7 @@ class Market(object):
                 if not isinstance(self.marketToBeRefined, type(None)) \
                         and self.marketToBeRefined is not None \
                         and marginal_price is None:
-                    #_log.debug("Market name: {}, check_marginal_price: Method 3".format(self.name))
+                    # _log.debug("Market name: {}, check_marginal_price: Method 3".format(self.name))
                     # Read the this market's prior refined market name.
                     prior_market = self.marketToBeRefined
 
@@ -1492,7 +1504,6 @@ class Market(object):
             interval_values = find_objs_by_ti(neighbor.activeVertices, time_interval)  #
 
             if len(interval_values) > 0:
-                #_log.debug("market name {} sum_vertices: 1 b")
                 # At least one active vertex was found in the time interval. Extract the vertices from the interval
                 # values.
                 vertices = [x.value for x in interval_values]  #
@@ -1508,47 +1519,37 @@ class Market(object):
 
                 marginal_price_list.extend(marginal_prices)  # marginal prices [$/kWh]
 
-        #_log.debug("market name {}  sum_vertices: 1 c")
         for i in range(len(my_transactive_node.localAssets)):
-            #_log.debug("market name {} sum_vertices: 2 a")
             # Change the reference to the corresponding local asset model
             asset = my_transactive_node.localAssets[i]  # a local asset model
 
             # Jump out of this iteration if local asset model nm happens to be
             # the "object to exclude"
             if object_to_exclude is not None and asset == object_to_exclude:
-                #_log.debug("market name {} sum_vertices: 2 exclude")
                 continue
 
             # Find the local asset model's active vertices in this time interval.
             interval_values = find_objs_by_ti(asset.activeVertices, time_interval)
 
             if len(interval_values) > 0:
-                #_log.debug("market name {} sum_vertices: 2 b")
                 # At least one active vertex was found in the time interval. Extract the vertices from the interval
                 # values.
                 vertices = [x.value for x in interval_values]  #
-                #_log.debug("market name {} sum_vertices: 2 c")
                 # Extract the marginal prices from the vertices.
                 if len(vertices) == 1:
-                    #_log.debug("market name {} sum_vertices: 2 d")
                     # There is one vertex. This means the power is constant for this local asset. Enforce the policy of
                     # assigning infinite marginal price to constant vertices.
                     marginal_prices = [float("inf")]  # [$/kWh]
 
                 else:
-                    #_log.debug("market name {} sum_vertices: 2 e")
                     # There are multiple vertices. Use the marginal price values from the vertices themselves.
                     marginal_prices = [x.marginalPrice for x in vertices]  # marginal prices [$/kWh]
 
-                #_log.debug("market name {} sum_vertices: 2 f")
                 marginal_price_list.extend(marginal_prices)  # [$/kWh]
 
         # A list of vertex marginal prices have been created.
-        #_log.debug("market name {} sum_vertices: 3 marginal_price_list: {}".format(self.name, marginal_price_list))
         # Sort the marginal prices from least to greatest.
         marginal_price_list.sort()  # [$/kWh]
-        #_log.debug("market name {} sum_vertices: 4 len of marginal_price_list: {}".format(self.name, len(marginal_price_list)))
         # Ensure that no more than two vertices will be created at the same marginal price. The third output of function
         # unique() is useful here because it is the index of unique entries in the original vector.
         # [~, ~, ind] = unique(mps)  # index of unique vector contents
@@ -1557,16 +1558,14 @@ class Market(object):
         # two-duplicates rule. The vector is padded with zeros, which should be computationally efficient. A counter is
         # used and should be incremented with new vector entries.
         if len(marginal_price_list) >= 3:
-            #_log.debug("market name {} sum_vertices: 5 a".format(self.name))
             marginal_price_list_new = [marginal_price_list[0],
                                        marginal_price_list[1]]
         else:
-            #_log.debug("market name {} sum_vertices: 5 b".format(self.name))
+            # _log.debug("market name {} sum_vertices: 5 b".format(self.name))
             marginal_price_list_new = list(marginal_price_list)
 
         # Index through the indices and append the new list only when there are fewer than three duplicates.
         for i in range(2, len(marginal_price_list)):
-            #_log.debug("market sum_vertices: 6 a")
             if marginal_price_list[i] != marginal_price_list[i - 1] \
                     or marginal_price_list[i - 1] != marginal_price_list[i - 2]:
                 marginal_price_list_new.append(marginal_price_list[i])
@@ -1580,26 +1579,21 @@ class Market(object):
         #             MARGINAL PRICE. OTHERWISE, INFINITY MARGINAL PRICES ARE TRIMMED FROM THE SET.
         marginal_price_list = [marginal_price_list_new[0]]
         for i in range(1, len(marginal_price_list_new)):
-            #_log.debug("market name {} sum_vertices: 7 a".format(self.name))
             if marginal_price_list_new[i] != float('inf'):
                 marginal_price_list.append(marginal_price_list_new[i])
 
         # A clean list of marginal prices has been created
-        #_log.debug("market name {} sum_vertices: 8".format(self.name))
         # Correct assignment of vertex power requires a small offset of any duplicate values. Index through the new list
         # of marginal prices again.
         for i in range(1, len(marginal_price_list)):
-            #_log.debug("market name {} sum_vertices: 9 a".format(self.name))
             if marginal_price_list[i] == marginal_price_list[i - 1]:
                 # A duplicate has been found. Offset the first of the two by a very small number.
                 marginal_price_list[i - 1] = marginal_price_list[i - 1] - 1e-10  # [$/kWh]
 
         # Create vertices at the marginal prices. Initialize the list of vertices.
         vertices = []
-        #_log.debug("market name {} sum_vertices: 9 b".format(self.name))
         # Index through the cleaned list of marginal prices
         for i in range(len(marginal_price_list)):
-            #_log.debug("market name {} sum_vertices: 10 a".format(self.name))
             # Create a vertex at the indexed marginal price value
             interval_value = Vertex(marginal_price_list[i], 0, 0)
 
@@ -1609,7 +1603,6 @@ class Market(object):
 
             # Include power and production costs from neighbor models. Index through the active neighbor models.
             for k in range(len(my_transactive_node.neighbors)):
-                #_log.debug("market sum_vertices: 10 b")
                 neighbor = my_transactive_node.neighbors[k]
 
                 if neighbor == object_to_exclude:
@@ -1630,7 +1623,6 @@ class Market(object):
 
             # Include power and production costs from local asset models. Index through the local asset models.
             for k in range(len(my_transactive_node.localAssets)):
-                #_log.debug("market sum_vertices: 10 c")
                 asset = my_transactive_node.localAssets[k]
 
                 if asset == object_to_exclude:
@@ -1642,12 +1634,11 @@ class Market(object):
                 # Find the indexed local asset model's production cost and add it to the sum of production cost pc for
                 # this vertex.
                 vertex_production_cost = vertex_production_cost \
-                                                + prod_cost_from_vertices(asset, time_interval, assets_power)  # [$]
+                                         + prod_cost_from_vertices(asset, time_interval, assets_power)  # [$]
 
                 # Add local asset power p to the sum net power pwr for this vertex.
                 vertex_power = vertex_power + assets_power  # [avg.kW]
 
-            #_log.debug("market sum_vertices: 11")
             # Save the sum production cost pc into the new vertex iv
             interval_value.cost = vertex_production_cost  # [$]
 
@@ -1657,7 +1648,6 @@ class Market(object):
             # Append Vertex iv to the list of vertices
             vertices.append(interval_value)
 
-            #_log.debug("market sum_vertices: 12")
         return vertices
 
     def update_costs(self, my_transactive_node):
@@ -1937,13 +1927,13 @@ class Market(object):
 
     def getDict(self):
         market_dict = {
-            "market_name" : self.name,
+            "market_name": self.name,
             "marketSeriesId": self.marketSeriesName,
             "totalDemand": self.totalDemand,
             "totalDualCost": self.totalDualCost,
             "totalGeneration": self.totalGeneration,
             "totalProductionCost": self.totalProductionCost
-            }
+        }
         return market_dict
 
     def getMarketSeriesDict(self):
@@ -1961,5 +1951,5 @@ class Market(object):
             "intervalDuration": self.intervalDuration,
             "intervalsToClear": self.intervalsToClear,
             "marketOrder": self.marketOrder
-            }
+        }
         return market_series_dict

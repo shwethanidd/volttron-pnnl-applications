@@ -482,7 +482,6 @@ class Neighbor(object):
         self.scheduledPowers = [x for x in self.scheduledPowers if x.market.marketState != MarketState.Expired]
 
         sp = [(x.timeInterval.name, x.value) for x in self.scheduledPowers]
-        _log.debug("{} neighbor model scheduledPowers are: {}".format(self.name, sp))
 
     def schedule_engagement(self):
         # Required from AbstractModel, but not particularly useful for any Neighbor.
@@ -546,9 +545,9 @@ class Neighbor(object):
 
             # Update the demand threshold.
             self.demandThreshold = max([0, self.demandThreshold, mtr.currentMeasurement])  # [avg.kW]
-            _log.debug("Meter: {} measurement: {} threshold: {}".format(mtr.name,
-                                                                        mtr.current_measurement,
-                                                                        self.demandThreshold))
+            #_log.debug("Meter: {} measurement: {} threshold: {}".format(mtr.name,
+            #                                                            mtr.current_measurement,
+            #                                                            self.demandThreshold))
 
         # The demand threshold should be reset in a new month. First find the current month number mon.
         mon = Timer.get_cur_time().month
@@ -865,10 +864,10 @@ class Neighbor(object):
             if self.lossFactor != 0:
                 active_vertices = self.include_marginal_losses(vertices=active_vertices)
 
-            _log.debug("update_vertices: active_threshold: {}".format(active_threshold))
-            _log.debug("update_vertices: time interval: {}".format(time_interval.startTime))
-            for x in active_vertices:
-                _log.debug("update_vertices: ({}, {}, {})".format(x.record, x.marginalPrice, x.power))
+            #_log.debug("update_vertices: active_threshold: {}".format(active_threshold))
+            #_log.debug("update_vertices: time interval: {}".format(time_interval.startTime))
+            #for x in active_vertices:
+            #    _log.debug("update_vertices: ({}, {}, {})".format(x.record, x.marginalPrice, x.power))
             # Include the impacts of demand charges that are imposed on any power that is RECEIVED from this neighbor.
             # Check to see if the neighbor has a scheduled power in this time interval.
             # Note that this logic may be turned off by simply setting property demandRate = 0.
@@ -999,7 +998,7 @@ class Neighbor(object):
                     # Calculate the peak in time intervals that come before the one now indexed by i.
                     # Get all the scheduled powers.
                     prior_power = self.scheduledPowers  # [avg.kW]
-                    _log.debug("neighbor_model.py, update_vertices, scheduledPowers: {}".format([x.value for x in self.scheduledPowers]))
+                    #_log.debug("neighbor_model.py, update_vertices, scheduledPowers: {}".format([x.value for x in self.scheduledPowers]))
 
                     if len(prior_power) < i + 1:
 
@@ -1184,7 +1183,7 @@ class Neighbor(object):
                 raise ('Neighbor %s must be either transactive or not.' % (self.name))
 
         av = [(x.timeInterval.name, x.value.marginalPrice, x.value.power) for x in self.activeVertices]
-        _log.debug("{} neighbor model active vertices are: {}".format(self.name, av))
+        #_log.debug("{} neighbor model active vertices are: {}".format(self.name, av))
 
     def prep_transactive_signal(self, market, this_transactive_node):
         # Prepare transactive records to send to a transactive neighbor. The prepared transactive signal should
@@ -1250,7 +1249,7 @@ class Neighbor(object):
         if not self.transactive:
             # log.warning('Neighbor must be transactive')
             return
-        _log.debug("prep_transactive_signal 1a")
+
         # Gather unique active market time intervals.
         time_intervals = market.timeIntervals
 
@@ -1258,25 +1257,24 @@ class Neighbor(object):
         demand_threshold = -self.demandThreshold
         active_threshold = demand_threshold
 
-        #_log.debug("prep_transactive_signal 1b")
+
         # Index through the active time intervals.
         for i in range(len(time_intervals)):
-            #_log.debug("prep_transactive_signal 1c")
+
             # Pick out the indexed market time interval.
             time_interval = time_intervals[i]
             time_interval_name = time_interval.name
 
-            #_log.debug("prep_transactive_signal 1d")
             # Create the vertices of the net supply or demand curve, EXCLUDING this transactive neighbor (i.e., "tnm").
             # NOTE: It is important that the transactive neighbor is excluded.
             vertices = market.sum_vertices(this_transactive_node, time_interval, self)
-            #_log.debug("prep_transactive_signal 1d a: {}".format(vertices))
+
             # This should be rare, Warn if no vertices are found.
             if vertices is None:
                 RuntimeError('No summed vertices were found in method prep_transactive_signal for neighbor '
                                + self.name + ' in time interval ' + time_interval_name)
 
-            #_log.debug("prep_transactive_signal 1d b: {}".format(vertices))
+
             # Find the minimum and maximum powers from the summed vertices. These are soft constraints that represent a
             # range of flexibility. The range will usually be excessively large from the supply side, much smaller from
             # the demand side.
@@ -1285,13 +1283,10 @@ class Neighbor(object):
             minimum_power = max(-self.maximumPower, min(vertex_powers))  # [avg.kW]
             maximum_power = min(-self.minimumPower, max(vertex_powers))  # [avg.kW]
 
-            #_log.debug("prep_transactive_signal 1d c: max power: {}, min power: {}".format(self.maximumPower,
-            #                                                                             self.minimumPower))
-            #_log.debug("prep_transactive_signal 1e")
             # If flexibility is being offered (i.e., more than one vertex), then we must make sure there exist vertices
             # at the extrema of the flexibility range.
             if minimum_power != maximum_power:
-                #_log.debug("prep_transactive_signal 1f")
+
                 # Find the vertex conditions at the minimum and create a vertex if none currently exists.
                 minimum_record = [x for x in vertices if x.power == minimum_power]
                 if minimum_record is None or len(minimum_record) == 0:
@@ -1301,13 +1296,10 @@ class Neighbor(object):
                                            power=minimum_power
                                            )
                                     )
-                    #_log.debug("prep_transactive_signal 1g")
-
-                #_log.debug("prep_transactive_signal 1h")
                 # Find the vertex conditions at the maximum and create a vertex if none currently exists.
                 maximum_record = [x for x in vertices if x.power == maximum_power]
                 if maximum_record is None or len(maximum_record) == 0:
-                    #_log.debug("prep_transactive_signal 1i")
+
                     maximum_price = self.marginal_price_from_vertices(maximum_power, vertices)
                     vertices.append(Vertex(marginal_price=maximum_price,
                                            prod_cost=0,
@@ -1316,22 +1308,16 @@ class Neighbor(object):
                                     )
 
             else:
-                #_log.debug("prep_transactive_signal 2a")
+
                 assert len(vertices) == 1, (['Unexpected flexibility logic in module ' + self.name
                                                  + ' method prep_transactive_signal()'])
                 vertices[0].marginalPrice = float('inf')
                 vertices[0].record = 0
 
-            #_log.debug("prep_transactive_signal 3a: ")
 
-            #for x in vertices:
-                #_log.debug("prep_transactive_signal: x.power: {}".format(x.power))
-
-            #_log.debug("prep_transactive_signal 3a, min power: {}, max power: {}".format(minimum_power,
-            #                                                                             maximum_power))
             # Trim the list of vertices to remove any that are outside the soft flexibility range.
             vertices = [x for x in vertices if minimum_power <= x.power <= maximum_power]
-            #_log.debug("prep_transactive_signal 3b: ")
+
             # At this point, the vertices include any flexibility, stated from the perspective of the local agent.
 
             # Remove the impacts of any demand charges that were included at the local node but are not relevant at the
@@ -1340,25 +1326,20 @@ class Neighbor(object):
             # NOTE: This correction should be done before correcting for marginal losses because demand charges are
             # presumed to apply to actual metered demand.
             if self.demandRate != 0:
-                #_log.debug("prep_transactive_signal 3c")
                 scheduled_power = [x.value for x in self.scheduledPowers if x.timeInterval == time_interval]
                 if scheduled_power is not None and len(scheduled_power) != 0:
-                    #_log.debug("prep_transactive_signal 3d")
                     active_threshold = min(active_threshold, scheduled_power[0])
-                #_log.debug("prep_transactive_signal 3e")
                 vertices = self.remove_demand_charges(vertices=vertices, threshold=active_threshold)
 
             # Remove the impacts of marginal losses to place the vertices into the perspective of the remote neighbor to
             # which a transactive signal will be sent. Note that the effects of losses can be ignored by making the loss
             # factor = 0.
             if self.lossFactor != 0:
-                #_log.debug("prep_transactive_signal 3f")
                 vertices = self.remove_marginal_losses(vertices=vertices)
 
             # The vertices are now suitable for creating transactive records that represent the remote agent
             # perspective.
 
-            #_log.debug("prep_transactive_signal 3g")
             # Keep only the transactive records that are NOT in the indexed time interval. The ones in the indexed time
             # interval will be recreated.
             # 20103DJH: Time interval names have been prepended with the market series name to make them unique to their
@@ -1372,13 +1353,12 @@ class Neighbor(object):
             # 200804DJH: TENT used to apply much value to a transactive record's record number. I have not been able to
             #            maintain this practice for Version 3 because auction markets do not resolve their scheduled
             #            powers before sending transactive signals.
-            #_log.debug("prep_transactive_signal 3h")
+
             for v in range(len(vertices)):
 
                 # Pick out the indexed vertex.
                 vertex = vertices[v]
 
-                #_log.debug("prep_transactive_signal 3i")
                 self.mySignal.append(TransactiveRecord(time_interval=time_interval_name,
                                                        record=int(v),
                                                        marginal_price=vertex.marginalPrice,
@@ -1389,7 +1369,6 @@ class Neighbor(object):
                                                        market_name=market.name
                                                        )
                                      )
-            #_log.debug("prep_transactive_signal 4a end")
 
         # 201013DJH: Trim the list of transactive records in mySignal if they reference time intervals that are no
         #            longer in active markets.
@@ -1442,10 +1421,10 @@ class Neighbor(object):
         msg = json.dumps(transactive_records, default=json_econder)
         msg = json.loads(msg)
 
-        _log.debug("At {}, {} sends signal from {} on topic {} message {}"
-                   .format(Timer.get_cur_time(),
-                           self.name,
-                           self.location, topic, msg))
+        #_log.debug("At {}, {} sends signal from {} on topic {} message {}"
+        #           .format(Timer.get_cur_time(),
+        #                   self.name,
+        #                   self.location, topic, msg))
         if topic:
             this_transactive_node.vip.pubsub.publish(peer='pubsub',
                                                  topic=topic,
@@ -1456,7 +1435,7 @@ class Neighbor(object):
                                                           'tnt_market_name': market.name})
 
         topic = this_transactive_node.transactive_record_topic
-        _log.debug("send_transactive signal: {}, msg: {}".format(topic, msg))
+
         headers = {headers_mod.DATE: format_timestamp(Timer.get_cur_time())}
         this_transactive_node.vip.pubsub.publish(peer='pubsub', topic=topic,
                                                      headers=headers, message=msg)
@@ -1494,7 +1473,6 @@ class Neighbor(object):
             _log.warning(f'{market.name} Received Transactive signal is None. {this_transactive_node.name}')
             return
 
-        _log.debug(f'{market.name} Received Transactive signal !!. {this_transactive_node.name}')
         # 201013DJH: The neighbor's list of received transactive records must be reinitialized so that it will not grow
         #            indefinitely. Only the latest records are relevant. See the end of method prep_transactive_signal()
         #            if more sophistication is warranted.
@@ -1509,7 +1487,6 @@ class Neighbor(object):
         newly_received_records = []
 
         for curve in curves:
-            _log.debug(f"curve['timeInterval']: {curve['timeInterval']}")
             market_name = curve['marketName']
             newly_received_records.append(TransactiveRecord(time_interval=curve['timeInterval'],
                                                             record=int(curve['record']),
@@ -1523,7 +1500,7 @@ class Neighbor(object):
 
         # 210127DJH: Save the newly received records to a formatted csv table.
         append_table(obj=newly_received_records)
-        _log.debug(f'{market.name} After append table !!. {this_transactive_node.name}')
+
         # 210127DJH: Trim the receviedSignal list to remove any expired markets and time intervals.
         active_markets = [x for x in this_transactive_node.markets]
         active_time_intervals = []
@@ -1532,7 +1509,6 @@ class Neighbor(object):
         active_time_interval_names = [x.name for x in active_time_intervals]
 
         self.receivedSignal = [x for x in self.receivedSignal if x.timeInterval in active_time_interval_names]
-        _log.debug(f'{market.name} {self.name} After receive_transactive_signal: {self.receivedSignal}::::{active_time_interval_names}')
 
     def update_costs(self, market):
         """

@@ -276,7 +276,7 @@ class Auction(Market):
         # that is "upstream" (i.e., toward generation).
         downstream_agents = []
         upstream_agents = []
-        #_log.debug("while_in_delivery_lead: Here 1")
+
         downstream_agents = [x for x in my_transactive_node.neighbors if x.upOrDown == Direction.downstream]
 
         upstream_agents = [x for x in my_transactive_node.neighbors if x.upOrDown == Direction.upstream]
@@ -284,7 +284,6 @@ class Auction(Market):
         unassigned_agents = [x for x in my_transactive_node.neighbors if x.upOrDown != Direction.upstream
                                                                                 and x.upOrDown != Direction.downstream]
 
-        # _log.debug("while_in_delivery_lead: Here 2")
         for x in range(len(unassigned_agents)):
             _log.warning('Warning: Assigning neighbor ' + unassigned_agents[x].name + ' the downstream direction')
             _log.warning('Assigning neighbor ' + unassigned_agents[x].name + ' the downstream direction')
@@ -302,7 +301,6 @@ class Auction(Market):
         upstream_agent = upstream_agents[0]
 
         if upstream_agent.transactive is True:
-            #_log.debug("while_in_delivery_lead: Here 3")
             # Create a list of the time interval names among the received transactive signal:
             received_time_intervals = []
 
@@ -312,13 +310,12 @@ class Auction(Market):
                 received_record = upstream_agent.receivedSignal[rts]        # the indexed received record
 
                 received_time_intervals.append(received_record.timeInterval)
-            #_log.debug("while_in_delivery_lead: Here 4")
+
             # Check whether any active market time intervals are not among the received record intervals.
             missing_time_intervals = [x.name for x in self.timeIntervals if x.name not in received_time_intervals]
 
             # If time intervals are missing among the upstream agent's transactive records,
             if missing_time_intervals:
-                #_log.debug("while_in_delivery_lead missing intervals {} in downstream bids received by upstream agents: {}".format(missing_time_intervals, upstream_agent.name))
                 all_received = False
 
                 # Call on the upstream agent model to try and receive the signal again.
@@ -329,19 +326,15 @@ class Auction(Market):
         #            auction market balancing.
 
         if all_received is True:
-            #_log.debug("while_in_delivery_lead: Here 5")
             # Update this Neighbor's active vertices, which is entirely completed from its recently received transactive
             # signal and its records.
             # 200702DJH: Why is this misspelling of "vertices" permitted here???????????????
             # upstream_agent.update_verices(self) #???????????????
             upstream_agent.update_vertices(self)
-            #_log.debug("while_in_delivery_lead: Here 6")
             # Sum all the agent's active local asset and neighbor vertices and determine the LMP at which local power is
             # balanced.
-            #_log.debug("while_in_delivery_lead: Here 7")
             self.balance(my_transactive_node)
             # Have the upstream agent neighbor model now schedule its power, based on the local agent's calculated LMPs.
-            #_log.debug("while_in_delivery_lead: Here 8")
             upstream_agent.schedule_power(self)
             # Re-schedule local asset powers now that the local market price is cleared. This may affect flexible assets
             # if the cleared price differs from the predicted one. Inelastic assets will not be affected.
@@ -351,11 +344,8 @@ class Auction(Market):
             local_assets = [x for x in my_transactive_node.localAssets]
             for i in range(len(local_assets)):
                 local_asset = local_assets[i]
-                #_log.debug("while_in_delivery_lead: Here 9")
                 # local_asset.schedule_power(self) ** COMMENT OUT: TOO CUMBERSOME **
                 for time_interval in self.timeIntervals:
-                    #_log.debug("while_in_delivery_lead: Here 10: local asset name: {}, time_interval: {}".format(local_asset.name,
-                    #                                                                                             time_interval.startTime))
                     price = [x.value for x in self.marginalPrices if x.timeInterval == time_interval]
                     power = production(local_asset, price[0], time_interval)
                     # 201012DJH: Shwetha discovered that teh list of powers was continuing to grow because this method
@@ -380,7 +370,6 @@ class Auction(Market):
 
             # For each downstream agent,
             for x in range(len(downstream_agents)):
-                #_log.debug("while_in_delivery_lead: Here 11")
                 downstream_agent = downstream_agents[x] # the indexed downstream agent
 
                 # 201731DJH: Now that the LMP has been determined, power may be scheduled for this downstream neighbor.

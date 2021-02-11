@@ -86,7 +86,7 @@ class TransactiveRecord(object):
         # These are the four normal arguments of the constructor. NOTE: Use the time interval ti text name, not a
         # TimeInterval object itself.
         if isinstance(time_interval, TimeInterval):
-            _log.debug("TransactiveRecord time_interval is instance of TimeInterval")
+            #_log.debug("TransactiveRecord time_interval is instance of TimeInterval")
             # A TimeInterval object argument must be represented by its text name.
             self.timeInterval = time_interval.name
         else:
@@ -94,8 +94,8 @@ class TransactiveRecord(object):
             # Argument ti is most likely received as a text string name. Further validation might be used to make sure
             # that ti is a valid name of an active time interval.
             self.timeInterval = str(time_interval)
-            _log.debug("TransactiveRecord time_interval is not instance of TimeInterval")
-        _log.debug("TransactiveRecord time_interval is {}".format(self.timeInterval))
+            #_log.debug("TransactiveRecord time_interval is not instance of TimeInterval")
+        #_log.debug("TransactiveRecord time_interval is {}".format(self.timeInterval))
         self.record = record                                # a record number (0 refers to the balance point)
         self.marginalPrice = marginal_price                 # marginal price [$/kWh]
         self.power = power                                  # power [avg.kW]
