@@ -477,9 +477,9 @@ class CampusAgent(Agent, TransactiveNode):
             markets_to_remove = []
             for i in range(len(self.markets)):
                 self.markets[i].events(self)
-                _log.debug("Markets: {}, Market name: {}, Market state: {}".format(len(self.markets),
-                                                                  self.markets[i].name,
-                                                                  self.markets[i].marketState))
+                #_log.debug("Markets: {}, Market name: {}, Market state: {}".format(len(self.markets),
+                #                                                  self.markets[i].name,
+                #                                                  self.markets[i].marketState))
                 if self.markets[i].marketState == MarketState.Expired:
                     markets_to_remove.append(self.markets[i])
                 # NOTE: A delay may be added, but the logic of the market(s) alone should be adequate to drive system

@@ -375,9 +375,9 @@ class CityAgent(Agent, TransactiveNode):
             markets_to_remove = []
             for i in range(len(self.markets)):
                 self.markets[i].events(self)
-                _log.debug("Markets: {}, Market name: {}, Market state: {}".format(len(self.markets),
-                                                                                   self.markets[i].name,
-                                                                                   self.markets[i].marketState))
+                #_log.debug("Markets: {}, Market name: {}, Market state: {}".format(len(self.markets),
+                #                                                                   self.markets[i].name,
+                #                                                                   self.markets[i].marketState))
 
                 if self.markets[i].marketState == MarketState.Expired:
                     markets_to_remove.append(self.markets[i])
