@@ -49,7 +49,7 @@ class TransactiveBase(MarketAgent, Model):
             "schedule": {},
             "model_parameters": {},
         }
-        # Initaialize run parameters
+        # Initialize run parameters
         self.aggregator = aggregator
 
         self.actuation_enabled = False
@@ -595,8 +595,10 @@ class MessageManager(object):
         price_info = lists_to_dict(market_intervals, raw_price_info)
         initial_prices = lists_to_dict(market_intervals, raw_initial_prices)
         if oat_predictions:
-            self.parent.oat_predictions = lists_to_dict(market_intervals, oat_predictions)
-            _log.debug("OAT predictions: %s", self.parent.oat_predictions)
+            oat_dict = lists_to_dict(market_intervals, oat_predictions)
+            for interval, oat in oat_dict.items():
+                self.parent.oat_predictions[interval] = oat
+                _log.debug("OAT predictions: %s", self.parent.oat_predictions)
         for market_time in market_intervals:
             avg_price, stdev_price = price_info[market_time]
             hour_of_year = calculate_hour_of_year(market_time)
@@ -630,7 +632,7 @@ class MessageManager(object):
             market_time = market_intervals[0]
             current_datetime = self.parent.get_current_datetime()
             market_time = parse(market_time) if isinstance(market_time, str) else market_time
-            market_time = market_time.astimezone(self.parent.input_data_tz)
+            market_time = market_time.replace(tzinfo=self.parent.input_data_tz)
             _log.debug("CORRECTION: {} -- {}".format(current_datetime, market_time))
             if current_datetime >= market_time:
                 self.parent.do_actuation()
@@ -671,10 +673,13 @@ class MessageManager(object):
         return price_array
 
     def prune_data(self):
-        for k in range(len(self.cleared_prices) - 48):
+        for k in range(len(self.cleared_prices) - 480):
             self.cleared_prices.popitem(last=False)
-        for k in range(len(self.price_info) - 48):
+        for k in range(len(self.price_info) - 480):
             self.price_info.popitem(last=False)
+        if self.parent.oat_predictions:
+            for k in range(len(self.parent.oat_predictions) - 480):
+                self.self.parent.oat_predictions.popitem(last=False)
 
     def get_current_cleared_price(self, _dt):
         hour_of_year = calculate_hour_of_year(_dt)
