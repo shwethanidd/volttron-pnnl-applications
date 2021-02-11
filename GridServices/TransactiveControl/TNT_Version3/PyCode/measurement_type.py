@@ -100,3 +100,43 @@ class MeasurementType(Enum):
     ConvergenceFlag = 33
     PredictedValue = 34
     Unknown = 40
+
+    @classmethod
+    def get(cls, number=40):
+        lookup = {1: 'Voltage',
+                  2: 'Power_Real',
+                  3: 'Power_Reactive',
+                  4: 'Price_Incremental',
+                  5: 'Price_Blended',
+                  6: 'Energy_Real',
+                  7: 'Energy_Reactive',
+                  8: 'Power_Minimum_Real',
+                  9: 'Power_Maximum_Real',
+                  10: 'Power_Minimum_Reactive',
+                  11: 'Power_Maximum_Reactive',
+                  12: 'Production_Vertex',
+                  13: 'Temperature',
+                  14: 'Insolation_Density',
+                  15: 'Relative_Humidity',
+                  16: 'Scheduled_Power',
+                  17: 'Engagement_Value',
+                  18: 'Reserve_Margin',
+                  19: 'Transition_Cost',
+                  20: 'Dual_Cost',
+                  21: 'Production_Cost',
+                  22: 'Active_Vertex',
+                  23: 'Average_Demand_kW',
+                  24: 'Vertex',
+                  25: 'Test_Vertex',
+                  26: 'Marginal_Price',
+                  27: 'System_Vertex',
+                  28: 'Blended_Price',
+                  29: 'Total_Generation',
+                  30: 'Total_Demand',
+                  31: 'Net_Power',
+                  32: 'Engagement_Schedule',
+                  33: 'Convergence_Flag',
+                  34: 'Predicted_Value',
+                  40: 'Unknown'}
+        return lookup[number]
+
