@@ -169,7 +169,7 @@ class RealTimeMarket(Market):
         if self.demand_curve[market_time].points:
             cleared_quantity = self.demand_curve[market_time].x(price)
 
-        _log.debug("%s poop - - price callback market: %s, price: %s, quantity: %s",
+        _log.debug("%s RT price_callback - - price callback market: %s, price: %s, quantity: %s",
                    self.identity, market_name, price, quantity)
         topic_suffix = "MarketClear"
         message = {
@@ -238,7 +238,7 @@ class DayAheadMarket(Market):
         if self.demand_curve[market_name].points:
             cleared_quantity = self.demand_curve[market_name].x(price)
 
-        _log.debug("%s price callback market: %s, price: %s, quantity: %s",
+        _log.debug("%s DA price_callback market: %s, price: %s, quantity: %s",
                    self.identity, market_name, price, quantity)
         topic_suffix = "MarketClear"
         message = {
