@@ -383,7 +383,7 @@ class CityAgent(Agent, TransactiveNode):
                     markets_to_remove.append(self.markets[i])
                 # NOTE: A delay may be added, but the logic of the market(s) alone should be adequate to drive system
                 # activities
-                gevent.sleep(0.4)
+                gevent.sleep(0.01)
             for mkt in markets_to_remove:
                 _log.debug("Market name: {}, Market state: {}. It will be removed shortly".format(mkt.name,
                                                                                                   mkt.marketState))

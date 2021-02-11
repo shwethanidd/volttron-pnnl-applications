@@ -173,15 +173,15 @@ class Market(object):
         :return: None
         """
         current_time = Timer.get_cur_time()
-        _log.debug("Market method: {}, current_time: {}".format(self.method, current_time))
+#        _log.debug("Market name: {}, current_time: {}, marketState: {}".format(self.name, current_time, self.marketState))
 
         reconcile_start_time = self.marketClearingTime + self.deliveryLeadTime \
                                + self.intervalsToClear * self.intervalDuration
-        _log.debug("Market method: {}, self.marketClearingTime: {}, self.deliveryLeadTime: {}, self.intervalsToClear: {}, self.intervalDuration: {}".format(self.name,
-                                                                                                                                                            self.marketClearingTime,
-                                                                                                                                                            self.deliveryLeadTime,
-                                                                                                                                                            self.intervalsToClear,
-                                                                                                                                                            self.intervalDuration))
+#        _log.debug("Market method: {}, self.marketClearingTime: {}, self.deliveryLeadTime: {}, self.intervalsToClear: {}, self.intervalDuration: {}".format(self.name,
+#                                                                                                                                                            self.marketClearingTime,
+#                                                                                                                                                            self.deliveryLeadTime,
+#                                                                                                                                                            self.intervalsToClear,
+#                                                                                                                                                            self.intervalDuration))
 
         # EVENT 1A: % A NEW MARKET OBJECT BECOMES ACTIVE ***************************************************************
         # This is the instantiation of a market object in market state "Active." This transition occurs at a time when
@@ -196,8 +196,8 @@ class Market(object):
         if self.isNewestMarket is True:
             future_clearing_time = current_time + self.activationLeadTime \
                                    + self.negotiationLeadTime + self.marketLeadTime
-            _log.debug("Market nextMarketClearingTime: {}, future_clearing_time: {}".format(self.nextMarketClearingTime,
-                                                                                                  future_clearing_time))
+ #           _log.debug("Market nextMarketClearingTime: {}, future_clearing_time: {}".format(self.nextMarketClearingTime,
+ #                                                                                                 future_clearing_time))
             if self.nextMarketClearingTime < future_clearing_time:
                 _log.info("spawning new markets")
                 self.spawn_markets(my_transactive_node, self.nextMarketClearingTime)
@@ -205,14 +205,13 @@ class Market(object):
                 # 210118DJH: New flag. Set true when responsibilities in market state are completed.
                 self._stateIsCompleted = True
 
-        _log.info("Market name: {}, self.marketState: {}".format(self.name, self.marketState))
+  #      _log.info("Market name: {}, self.marketState: {}".format(self.name, self.marketState))
 
         # EVENT 1B: TRANSITION FROM INACTIVE TO ACTIVE STATE ***********************************************************
         if self.marketState == MarketState.Inactive:
-            _log.debug("In Market name: {} In Market State: {}".format(self.name, self.marketState))
             activation_start_time = self.marketClearingTime - self.marketLeadTime - self.negotiationLeadTime \
                                     - self.activationLeadTime
-            _log.debug("In Market name: {}, Market State: {}, Current time: {}, activation start time: {}".format(
+            _log.debug("In Market name: {}, Market State: {}, Current time: {}, activation_start_time: {}".format(
                                                                                                 self.name,
                                                                                                 self.marketState,
                                                                                                 current_time,
@@ -290,6 +289,7 @@ class Market(object):
         if self.marketState == MarketState.Negotiation and self._stateIsCompleted is True:
 
             market_lead_start_time = self.marketClearingTime - self.marketLeadTime
+            _log.debug(f"Market State: {self.marketState}, Type of current time: {type(current_time)}, Type of market_lead_start_time: {type(market_lead_start_time)}")
 
             if current_time >= market_lead_start_time:
 
@@ -332,6 +332,8 @@ class Market(object):
                                                                                                               current_time,
                                                                                                               delivery_lead_start_time))
 
+            _log.debug(f"Market State: {self.marketState}, Type of current time: {type(current_time)}, Type of delivery_lead_start_time: {type(delivery_lead_start_time)}")
+
             if current_time >= delivery_lead_start_time:
 
                 # Set the market state to "DeliveryLead."
@@ -366,6 +368,8 @@ class Market(object):
                                                                                                                    self.marketState,
                                                                                                                    current_time,
                                                                                                                    delivery_start_time))
+
+            _log.debug(f"Market State: {self.marketState}, Type of current time: {type(current_time)}, Type of delivery_start_time: {type(delivery_start_time)}")
             if current_time >= delivery_start_time:
 
                 # Change the market state from "DeliverLead" to "Delivery."

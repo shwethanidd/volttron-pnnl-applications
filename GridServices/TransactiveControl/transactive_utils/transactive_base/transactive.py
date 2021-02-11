@@ -616,7 +616,7 @@ class MessageManager(object):
         raw_cleared_prices = message["prices"]
         market_intervals = message.get("market_intervals")
         _log.debug("Update cleared price: {} - for interval: {}".format(raw_cleared_prices, market_intervals))
-        self.parent.update_market_intervals(market_intervals, correction_market)
+        # self.parent.update_market_intervals(market_intervals, correction_market)
         market_intervals = [interval for interval in market_intervals]
         cleared_prices = lists_to_dict(market_intervals, raw_cleared_prices)
         price_info = lists_to_dict(market_intervals, raw_price_info)

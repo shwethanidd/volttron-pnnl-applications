@@ -165,8 +165,8 @@ class Auction(Market):
                 #my_transactive_node.vip.pubsub.publish("pubsub", topic, headers, msg)
 
                 self.converged = True
-        else:
-            self._stateIsCompleted = True
+                # 210208DJH: This new flag must be set true to leave this state and allow the next transition.
+                self._stateIsCompleted = True
         return None
 
     # TODO: Consider using TransactiveNode property "converged" to keep track of those downstream agents that have \
@@ -259,6 +259,11 @@ class Auction(Market):
 
                     # Send the transactive signal (i.e., aggregated bid) to the upstream agent if it is a transactive agent.
                     upstream_agent.send_transactive_signal(self, my_transactive_node, upstream_agent.publishTopic)
+
+            # 210208DJH: This new flag must be set true to leave this state and allow the next transition.
+            #            TODO: We don't have foolproof verification that the upstream agent was sent this signal,
+            #             but this might be improved later. This seems like the right place because it's confirmed that
+            #             all needed signals have been received.
             self._stateIsCompleted = True
 
     def while_in_delivery_lead(self, my_transactive_node):
@@ -324,7 +329,6 @@ class Auction(Market):
         #            auction market balancing.
 
         if all_received is True:
-            self.publish_records(my_transactive_node, upstream_agents, downstream_agents)
             #_log.debug("while_in_delivery_lead: Here 5")
             # Update this Neighbor's active vertices, which is entirely completed from its recently received transactive
             # signal and its records.
@@ -391,7 +395,8 @@ class Auction(Market):
 
                 # and send it a transactive signal (i.e., an offer).
                 downstream_agent.send_transactive_signal(self, my_transactive_node, downstream_agent.publishTopic)
-                self._stateIsCompleted = True
+            # 210208DJH: This new flag must be set true to leave this state and allow the next transition.
+            self._stateIsCompleted = True
 
     def transition_from_inactive_to_active(self, my_transactive_node):
         """

@@ -1498,7 +1498,7 @@ class Neighbor(object):
         # 201013DJH: The neighbor's list of received transactive records must be reinitialized so that it will not grow
         #            indefinitely. Only the latest records are relevant. See the end of method prep_transactive_signal()
         #            if more sophistication is warranted.
-        self.receivedSignal = []
+        #self.receivedSignal = []
         # 210126DJH: TODO: Robert or Shwetha, class curves must be updated with the new properties of TransactiveRecord
         #            class, please, to keep data collection straight. The new properties are
         #             (1) TransactiveRecord.neighborName  # text name of Neighbor object
