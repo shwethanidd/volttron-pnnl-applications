@@ -122,6 +122,7 @@ class CampusAgent(Agent, TransactiveNode):
         self.dc_threshold_topic = "{}/{}/dc_threshold_topic".format(self.db_topic, self.name)
 
         # New TNT db topics
+        self.transactive_operation_topic = "{}/{}/transactive_operation".format(self.db_topic, self.name)
         self.local_asset_topic = "{}/{}/local_assets".format(self.db_topic, self.name)
         self.neighbor_topic = "{}/{}/neighbors".format(self.db_topic, self.name)
         self.transactive_record_topic = "{}/{}/transactive_record".format(self.db_topic, self.name)
@@ -140,6 +141,7 @@ class CampusAgent(Agent, TransactiveNode):
         Timer.sim_one_hr_in_sec = self.simulation_one_hour_in_seconds
         self._stop_agent = False
         self.city = None
+        self.real_time_duration = self.config.get('real_time_market_duration', 15)
 
     @Core.receiver('onstart')
     def onstart(self, sender, **kwargs):
@@ -396,6 +398,7 @@ class CampusAgent(Agent, TransactiveNode):
         market.negotiationLeadTime = timedelta(minutes=15)
         market.marketLeadTime = timedelta(minutes=15)
         market.activationLeadTime = timedelta(minutes=0)
+        market.real_time_duration = self.real_time_duration
 
         # Determine the current and next market clearing times in this market:
         current_time = Timer.get_cur_time()
@@ -474,14 +477,14 @@ class CampusAgent(Agent, TransactiveNode):
             markets_to_remove = []
             for i in range(len(self.markets)):
                 self.markets[i].events(self)
-                _log.debug("Markets: {}, Market name: {}, Market state: {}".format(len(self.markets),
-                                                                  self.markets[i].name,
-                                                                  self.markets[i].marketState))
+                #_log.debug("Markets: {}, Market name: {}, Market state: {}".format(len(self.markets),
+                #                                                  self.markets[i].name,
+                #                                                  self.markets[i].marketState))
                 if self.markets[i].marketState == MarketState.Expired:
                     markets_to_remove.append(self.markets[i])
                 # NOTE: A delay may be added, but the logic of the market(s) alone should be adequate to drive system
                 # activities
-                gevent.sleep(0.4)
+                gevent.sleep(0.01)
             for mkt in markets_to_remove:
                 _log.debug("Market name: {}, Market state: {}. It will be removed shortly".format(mkt.name,
                                                                                                   mkt.marketState))

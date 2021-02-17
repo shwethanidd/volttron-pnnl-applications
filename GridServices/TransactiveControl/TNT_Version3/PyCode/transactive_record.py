@@ -70,6 +70,9 @@ _log = logging.getLogger(__name__)
 class TransactiveRecord(object):
     def __init__(self,
                  time_interval,
+                 neighbor_name='unknown',  # Name of Neighbor object that owns this record
+                 direction='unknown',  # Reference to record among {'received', 'prepared', 'sent', 'unknown'}
+                 market_name='unknown',  # Reference to market name
                  record=0,
                  marginal_price=0,
                  power=0,
@@ -83,7 +86,7 @@ class TransactiveRecord(object):
         # These are the four normal arguments of the constructor. NOTE: Use the time interval ti text name, not a
         # TimeInterval object itself.
         if isinstance(time_interval, TimeInterval):
-            _log.debug("TransactiveRecord time_interval is instance of TimeInterval")
+            #_log.debug("TransactiveRecord time_interval is instance of TimeInterval")
             # A TimeInterval object argument must be represented by its text name.
             self.timeInterval = time_interval.name
         else:
@@ -91,8 +94,8 @@ class TransactiveRecord(object):
             # Argument ti is most likely received as a text string name. Further validation might be used to make sure
             # that ti is a valid name of an active time interval.
             self.timeInterval = str(time_interval)
-            _log.debug("TransactiveRecord time_interval is not instance of TimeInterval")
-        _log.debug("TransactiveRecord time_interval is {}".format(self.timeInterval))
+            #_log.debug("TransactiveRecord time_interval is not instance of TimeInterval")
+        #_log.debug("TransactiveRecord time_interval is {}".format(self.timeInterval))
         self.record = record                                # a record number (0 refers to the balance point)
         self.marginalPrice = marginal_price                 # marginal price [$/kWh]
         self.power = power                                  # power [avg.kW]
@@ -108,15 +111,25 @@ class TransactiveRecord(object):
         #self.timeStamp = datetime.utcnow()
         self.timeStamp = Timer.get_cur_time()
         _log.debug("TransactiveRecord timeStamp is {}".format(self.timeStamp))
+        # 210126DJH: Property "neighbor" is introduced to assist with data collection. If the name of the associated
+        #            Neighbor object is not captured, a Transactive Record can not be traced to the correct Neighbor.
+        self.neighborName = neighbor_name
+        # 210126DJH: This is a new reference to the source of a record from among ["received", "sent", "prepared"]. It
+        #            is important to data collection.
+        self.direction = direction
+        if self.direction != "unknown":
+            if self.direction not in ["received", "sent", "prepared"]:
+                self.direction = "unknown"
+
+        # 210126DJH: This is a new reference to the market in which the transactive record is relevant. A policy has
+        #            emerged to name Market objects by prepending the clearing time with the market series name.
+        self.marketName = market_name
 
     def getDict(self):
         transactive_record_dict = {
             "timeInterval": self.timeInterval,
             "marginalPrice": self.marginalPrice,
-            "record": self.record,
-            "power": self.power,
-            #"timeStamp": self.timeStamp,
-            "cost": self.cost
+            "power": self.power
         }
 
         return transactive_record_dict
