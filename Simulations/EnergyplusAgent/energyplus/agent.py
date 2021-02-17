@@ -211,6 +211,7 @@ class PubSubAgent(Agent):
         # Publish message
         self._now = self._now + td(minutes=1)
         num_days = (date(2017, int(self.month)+1, 1) - date(2017, int(self.month), 1)).days
+
         
         if self.month is None or self.day is None or self.minute is None or self.hour is None:
             _now = self._now

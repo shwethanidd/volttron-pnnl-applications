@@ -1,7 +1,7 @@
 import logging
 import gevent
 from dateutil.parser import parse
-from transactive_utils.transactive_base.utils import calculate_hour_of_year, lists_to_dict
+from transactive_utils.transactive_base.utils import calculate_epoch, lists_to_dict
 from volttron.platform.agent.utils import setup_logging
 from volttron.platform.agent.base_market_agent.poly_line import PolyLine
 from volttron.platform.agent.base_market_agent.point import Point
@@ -157,14 +157,14 @@ class RealTimeMarket(Market):
         if self.schedule:
             occupied = self.check_schedule(market_time)
 
-        demand_curve = self.create_demand_curve(market_name, parse(market_time), occupied, realtime=True)
+        demand_curve = self.create_demand_curve(market_name, market_time, occupied, realtime=True)
         self.demand_curve[market_time] = demand_curve
         result, message = self.make_offer(market_name, buyer_seller, demand_curve)
 
     def price_callback(self, timestamp, market_name, buyer_seller, price, quantity):
         market_time = self.market_intervals[market_name]
-        market_hour = calculate_hour_of_year(market_time)
-        price = self.price_manager.cleared_prices[market_hour]
+        market_epoch = calculate_epoch(market_time)
+        price = self.price_manager.cleared_prices[market_epoch]
         cleared_quantity = "None"
         if self.demand_curve[market_time].points:
             cleared_quantity = self.demand_curve[market_time].x(price)
@@ -225,15 +225,15 @@ class DayAheadMarket(Market):
         if self.schedule:
             occupied = self.check_schedule(market_time)
 
-        demand_curve = self.create_demand_curve(market_name, parse(market_time), occupied, realtime=False)
+        demand_curve = self.create_demand_curve(market_name, market_time, occupied, realtime=False)
         self.demand_curve[market_name] = demand_curve
         result, message = self.make_offer(market_name, buyer_seller, demand_curve)
 
     def price_callback(self, timestamp, market_name, buyer_seller, price, quantity):
         market_time = self.market_intervals[market_name]
         market_index = self.market_list.index(market_name)
-        market_hour = calculate_hour_of_year(market_time)
-        price = self.price_manager.cleared_prices[market_hour]
+        market_epoch = calculate_epoch(parse(market_time))
+        price = self.price_manager.cleared_prices[market_epoch]
         cleared_quantity = "None"
         if self.demand_curve[market_name].points:
             cleared_quantity = self.demand_curve[market_name].x(price)

@@ -10,7 +10,7 @@ import gevent
 from collections import OrderedDict
 from transactive_utils.transactive_base.markets import DayAheadMarket
 from transactive_utils.transactive_base.markets import RealTimeMarket
-from transactive_utils.transactive_base.utils import calculate_hour_of_year, lists_to_dict
+from transactive_utils.transactive_base.utils import calculate_epoch, lists_to_dict, sort_dict
 from volttron.platform.agent.math_utils import mean, stdev
 from volttron.platform.agent.base_market_agent import MarketAgent
 from volttron.platform.agent.base_market_agent.poly_line import PolyLine
@@ -585,27 +585,26 @@ class MessageManager(object):
         self.run_dayahead_market = False
 
     def update_prices(self, peer, sender, bus, topic, headers, message):
-        raw_price_info = message["price_info"]
-        raw_initial_prices = message["prices"]
+        price_info = message["price_info"]
+        initial_prices = message["prices"]
         oat_predictions = message.get("temp", [])
         correction_market = message.get("correction_market", False)
         market_intervals = message.get("market_intervals")
-        _log.debug("Update prices price: {} - for interval: {}".format(raw_initial_prices, market_intervals))
+        _log.debug("Update prices price: {} - for interval: {}".format(initial_prices, market_intervals))
         self.parent.update_market_intervals(market_intervals, correction_market)
-        price_info = lists_to_dict(market_intervals, raw_price_info)
-        initial_prices = lists_to_dict(market_intervals, raw_initial_prices)
         if oat_predictions:
             oat_dict = lists_to_dict(market_intervals, oat_predictions)
             for interval, oat in oat_dict.items():
                 self.parent.oat_predictions[interval] = oat
                 _log.debug("OAT predictions: %s", self.parent.oat_predictions)
-        for market_time in market_intervals:
-            avg_price, stdev_price = price_info[market_time]
-            hour_of_year = calculate_hour_of_year(market_time)
+        for market_time, info, price in zip(market_intervals, price_info, initial_prices):
+            avg_price, stdev_price = info
+            epoch = calculate_epoch(market_time)
             price_array = self.determine_prices(avg_price, stdev_price)
-            self.price_info[hour_of_year] = price_array
-            self.cleared_prices[hour_of_year] = initial_prices[market_time]
-
+            self.price_info[epoch] = price_array
+            self.cleared_prices[epoch] = initial_prices[market_time]
+        self.cleared_prices = sort_dict(self.cleared_prices)
+        self.price_info = sort_dict(price_info)
         self.correction_market = correction_market
         if not correction_market:
             self.run_dayahead_market = True
@@ -614,20 +613,17 @@ class MessageManager(object):
 
     def update_cleared_prices(self, peer, sender, bus, topic, headers, message):
         correction_market = message.get("correction_market", False)
-        raw_price_info = message["price_info"]
-        raw_cleared_prices = message["prices"]
+        price_info = message["price_info"]
+        cleared_prices = message["prices"]
         market_intervals = message.get("market_intervals")
-        _log.debug("Update cleared price: {} - for interval: {}".format(raw_cleared_prices, market_intervals))
+        _log.debug("Update cleared price: {} - for interval: {}".format(cleared_prices, market_intervals))
         # self.parent.update_market_intervals(market_intervals, correction_market)
-        market_intervals = [interval for interval in market_intervals]
-        cleared_prices = lists_to_dict(market_intervals, raw_cleared_prices)
-        price_info = lists_to_dict(market_intervals, raw_price_info)
-        for market_time in market_intervals:
-            hour_of_year = calculate_hour_of_year(market_time)
-            avg_price, stdev_price = price_info[market_time]
+        for market_time, info, price in zip(market_intervals, price_info, cleared_prices):
+            epoch_time = calculate_epoch(market_time)
+            avg_price, stdev_price = info
             price_array = self.determine_prices(avg_price, stdev_price)
-            self.price_info[hour_of_year] = price_array
-            self.cleared_prices[hour_of_year] = cleared_prices[market_time]
+            self.price_info[epoch_time] = price_array
+            self.cleared_prices[epoch_time] = cleared_prices[market_time]
         if correction_market and market_intervals:
             market_time = market_intervals[0]
             current_datetime = self.parent.get_current_datetime()
@@ -636,16 +632,18 @@ class MessageManager(object):
             _log.debug("CORRECTION: {} -- {}".format(current_datetime, market_time))
             if current_datetime >= market_time:
                 self.parent.do_actuation()
+        self.cleared_prices = sort_dict(self.cleared_prices)
+        self.price_info = sort_dict(self.cleared_prices)
         self.prune_data()
 
     def update_rtp_prices(self, peer, sender, bus, topic, headers, message):
         market_prices = message["prices"]
         _log.debug("Get RTP Prices: {}".format(market_prices))
-        hour_of_year = calculate_hour_of_year(dt.now())
+        epoch_time = calculate_epoch(dt.now())
         self.parent.update_market_intervals([str(dt.now())], True)
-        self.cleared_prices[hour_of_year] = market_prices[-1]
+        self.cleared_prices[epoch_time] = market_prices[-1]
         price_array = self.determine_prices(None, None, price_array=market_prices)
-        self.price_info[hour_of_year] = price_array
+        self.price_info[epoch_time] = price_array
         self.prune_data()
 
     def determine_prices(self, avg_price, stdev_price, price_array=None):
@@ -679,22 +677,35 @@ class MessageManager(object):
             self.price_info.popitem(last=False)
         if self.parent.oat_predictions:
             for k in range(len(self.parent.oat_predictions) - 480):
-                self.self.parent.oat_predictions.popitem(last=False)
+                self.parent.oat_predictions.popitem(last=False)
 
     def get_current_cleared_price(self, _dt):
-        hour_of_year = calculate_hour_of_year(_dt)
-        if hour_of_year in self.cleared_prices:
-            price = self.cleared_prices[hour_of_year]
+        if isinstance(_dt, str):
+            _dt = parse(_dt)
+        prices = []
+        current_epoch = calculate_epoch(_dt)
+        for epoch, price in self.cleared_prices.items():
+            if 0 < current_epoch - epoch < 3600:
+                prices.append(price)
+        if prices:
+            cleared_price = prices[-1]
         else:
             _log.debug("No cleared price for current hour!")
-            price = None
-        return price
+            cleared_price = None
+        return cleared_price
 
     def get_price_array(self, _dt):
-        hour_of_year = calculate_hour_of_year(_dt)
-        if hour_of_year in self.price_info:
-            price_array = self.price_info[hour_of_year]
+        if isinstance(_dt, str):
+            _dt = parse(_dt)
+        prices = []
+        current_epoch = calculate_epoch(_dt)
+        for epoch, price in self.price_info.items():
+            if 0 < current_epoch - epoch < 3600:
+                prices.append(price)
+        if prices:
+            price_info = prices[-1]
         else:
-            _log.debug("No price array for current hour!")
-            price_array = []
-        return price_array
+            _log.debug("No cleared price for current hour!")
+            price_info = []
+        return price_info
+
