@@ -2,6 +2,7 @@ import logging
 import operator
 import importlib
 from volttron.platform.agent import utils
+from dateutil.parser import parse
 from transactive_utils.models.utils import clamp
 import transactive_utils.models.input_names as data_names
 
@@ -93,7 +94,7 @@ class firstorderzone(object):
         self.zt_predictions[index] = _set
 
     def predict(self, _set, market_time, occupied, realtime=False):
-        index = market_time.hour
+        index = parse(market_time).hour
         if realtime:
             oat = self.oat
             zt = self.zt
@@ -102,7 +103,8 @@ class firstorderzone(object):
             zt_index = index - 1 if index > 0 else 23
             zt = self.zt_predictions[zt_index]
             oat = self.get_input_value(self.oat_name)
-            if market_time is self.parent.oat_predictions:
+            if market_time in self.parent.oat_predictions:
+                _log.debug("OAT NOT IN PREDICTIONS! %s -- %s", market_time, self.parent.oat_predictions)
                 oat = self.parent.oat_predictions[market_time]
         q = 0.0
         if oat is not None and zt is not None:
