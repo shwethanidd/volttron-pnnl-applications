@@ -250,14 +250,17 @@ class TccModel(LocalAsset):
                     q2 = -point2[0]
                     p2 = point2[1]
 
-                    v1 = Vertex(p1, 0, q1)
-                    iv1 = IntervalValue(self, time_interval, mkt, MeasurementType.ActiveVertex, v1)
-                    self.activeVertices.append(iv1)
-
                     if q2 != q1:
                         v2 = Vertex(p2, 0, q2)
                         iv2 = IntervalValue(self, time_intervals[i], mkt, MeasurementType.ActiveVertex, v2)
                         self.activeVertices.append(iv2)
+                        v1 = Vertex(p1, 0, q1)
+                        iv1 = IntervalValue(self, time_interval, mkt, MeasurementType.ActiveVertex, v1)
+                        self.activeVertices.append(iv1)
+                    else:
+                        v1 = Vertex(float("inf"), 0, q1)
+                        iv1 = IntervalValue(self, time_interval, mkt, MeasurementType.ActiveVertex, v1)
+                        self.activeVertices.append(iv1)
                 except IndexError as e:
                     _log.debug("TCC model e: {}, i: {}".format(e, i))
 
