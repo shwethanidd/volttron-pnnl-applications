@@ -81,7 +81,7 @@ from .data_manager import *
 utils.setup_logging()
 _log = logging.getLogger(__name__)
 
-DEBUG = 1
+DEBUG=0
 
 
 class Market(object):

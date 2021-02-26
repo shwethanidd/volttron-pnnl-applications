@@ -395,7 +395,8 @@ class CampusAgent(Agent, TransactiveNode):
 
         # This times must be defined the same for all network agents.
         market.deliveryLeadTime = timedelta(hours=1)
-        market.negotiationLeadTime = timedelta(minutes=15)
+        #market.negotiationLeadTime = timedelta(minutes=15)
+        market.negotiationLeadTime = timedelta(minutes=8)
         market.marketLeadTime = timedelta(minutes=15)
         market.activationLeadTime = timedelta(minutes=0)
         market.real_time_duration = self.real_time_duration

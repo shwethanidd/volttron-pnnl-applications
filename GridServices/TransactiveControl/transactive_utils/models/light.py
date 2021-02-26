@@ -1,5 +1,5 @@
 import logging
-
+from dateutil.parser import parse
 from volttron.platform.agent import utils
 import transactive_utils.models.input_names as data_names
 
@@ -35,7 +35,7 @@ class simple_profile(object):
         pass
 
     def predict(self, _set, market_time, occupied, realtime=False):
-        index = market_time.hour
+        index = parse(market_time).hour
         if not occupied:
             power = self.lighting_schedule[index]*self.rated_power
         else:

@@ -80,7 +80,7 @@ class TransactiveBase(MarketAgent, Model):
         self.market_type = None
         self.day_ahead_market = None
         self.rtp_market = None
-        self.oat_predictions = {}
+        self.oat_predictions = OrderedDict()
 
         # Variables declared in configure_main
         self.record_topic = None
@@ -159,7 +159,7 @@ class TransactiveBase(MarketAgent, Model):
             _log.debug("CREATE MODEL")
             model_config = config.get("model_parameters", {})
             Model.__init__(self, model_config, **kwargs)
-            if not self.market_list and tns is not None and self.model is not None:
+            if not self.market_list and tns is not None:
                 if self.aggregator is None:
                     _log.debug("%s is a transactive agent.", self.core.identity)
                     for i in range(24):
@@ -399,18 +399,22 @@ class TransactiveBase(MarketAgent, Model):
                 self.outputs[name]["release"] = release_value
             if self.actuation_method == "periodic":
                 _log.debug("Setup periodic actuation: %s -- %s", self.core.identity, self.actuation_rate)
-                self.actuation_obj = self.core.periodic(self.actuation_rate, self.do_actuation, wait=self.actuation_rate)
+                #TODO: Must remediate prior to merge to main branch
+                # self.actuation_obj = self.core.periodic(self.actuation_rate, self.do_actuation, wait=self.actuation_rate)
         self.actuation_enabled = state
 
-    def update_outputs(self, name, price):
+    def update_outputs(self, name, price, prices):
         _log.debug("update_outputs: %s", self.core.identity)
         if price is None:
             price = self.price_manager.get_current_cleared_price(self.get_current_datetime())
             if price is None:
                 return
+        if prices is None:
+            prices = self.price_manager.get_price_array(self.get_current_datetime())
+            if prices is None:
+                return
 
         sets = self.outputs[name]["ct_flex"]
-        prices = self.price_manager.get_price_array(self.get_current_datetime())
         _log.debug("Call determine_control: %s", self.core.identity)
         value = self.determine_control(sets, prices, price)
         _log.debug("determine_control for time: %s -  price: %s - price_range: %s - control: %s",
@@ -421,13 +425,13 @@ class TransactiveBase(MarketAgent, Model):
         message = {point: value, "Price": price}
         self.publish_record(topic_suffix, message)
 
-    def do_actuation(self, price=None):
+    def do_actuation(self, price=None, prices=None):
         _log.debug("do_actuation {}".format(self.outputs))
         for name, output_info in self.outputs.items():
             if not output_info["condition"]:
                 continue
             _log.debug("call update_outputs - %s", self.core.identity)
-            self.update_outputs(name, price)
+            self.update_outputs(name, price, prices)
             topic = output_info["topic"]
             point = output_info["point"]
             actuator = output_info["actuator"]
@@ -602,9 +606,9 @@ class MessageManager(object):
             epoch = calculate_epoch(market_time)
             price_array = self.determine_prices(avg_price, stdev_price)
             self.price_info[epoch] = price_array
-            self.cleared_prices[epoch] = initial_prices[market_time]
+            self.cleared_prices[epoch] = price
         self.cleared_prices = sort_dict(self.cleared_prices)
-        self.price_info = sort_dict(price_info)
+        self.price_info = sort_dict(self.price_info)
         self.correction_market = correction_market
         if not correction_market:
             self.run_dayahead_market = True
@@ -616,6 +620,8 @@ class MessageManager(object):
         price_info = message["price_info"]
         cleared_prices = message["prices"]
         market_intervals = message.get("market_intervals")
+        price = None
+        price_array = None
         _log.debug("Update cleared price: {} - for interval: {}".format(cleared_prices, market_intervals))
         # self.parent.update_market_intervals(market_intervals, correction_market)
         for market_time, info, price in zip(market_intervals, price_info, cleared_prices):
@@ -623,17 +629,17 @@ class MessageManager(object):
             avg_price, stdev_price = info
             price_array = self.determine_prices(avg_price, stdev_price)
             self.price_info[epoch_time] = price_array
-            self.cleared_prices[epoch_time] = cleared_prices[market_time]
+            self.cleared_prices[epoch_time] = price
         if correction_market and market_intervals:
             market_time = market_intervals[0]
             current_datetime = self.parent.get_current_datetime()
             market_time = parse(market_time) if isinstance(market_time, str) else market_time
             market_time = market_time.replace(tzinfo=self.parent.input_data_tz)
             _log.debug("CORRECTION: {} -- {}".format(current_datetime, market_time))
-            if current_datetime >= market_time:
-                self.parent.do_actuation()
+            #if current_datetime >= market_time:
+            self.parent.do_actuation(price, price_array)
         self.cleared_prices = sort_dict(self.cleared_prices)
-        self.price_info = sort_dict(self.cleared_prices)
+        self.price_info = sort_dict(self.price_info)
         self.prune_data()
 
     def update_rtp_prices(self, peer, sender, bus, topic, headers, message):
@@ -685,7 +691,7 @@ class MessageManager(object):
         prices = []
         current_epoch = calculate_epoch(_dt)
         for epoch, price in self.cleared_prices.items():
-            if 0 < current_epoch - epoch < 3600:
+            if 0 <= current_epoch - epoch < 3600:
                 prices.append(price)
         if prices:
             cleared_price = prices[-1]
@@ -700,7 +706,7 @@ class MessageManager(object):
         prices = []
         current_epoch = calculate_epoch(_dt)
         for epoch, price in self.price_info.items():
-            if 0 < current_epoch - epoch < 3600:
+            if 0 <= current_epoch - epoch < 3600:
                 prices.append(price)
         if prices:
             price_info = prices[-1]
