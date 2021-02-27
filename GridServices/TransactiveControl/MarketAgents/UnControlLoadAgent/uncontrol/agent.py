@@ -123,6 +123,7 @@ class UncontrolLoadAgent(TransactiveBase):
         :param kwargs:
         :return:
         """
+        self.record_topic = '/'.join(["UncontrolLoad"])
         for market in self.market_manager_list:
             market.offer_callback = self.offer_callback
             market.create_demand_curve = self.create_demand_curve
