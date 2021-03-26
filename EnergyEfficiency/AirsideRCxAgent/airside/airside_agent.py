@@ -436,6 +436,8 @@ class AirsideAgent(Agent):
         return mixed (string or float or int or dic
         """
         value = self.point_mapping.get(name, None)
+        if value is not None and isinstance(value, str):
+            value = [value]
         return value
 
     def configuration_value_check(self):
@@ -610,21 +612,21 @@ class AirsideAgent(Agent):
         for key, value in data.items():
             if value is None:
                 continue
-            if key == self.fan_status_name:
+            if key in self.fan_status_name:
                 self.fan_status_data = value
-            elif key == self.duct_stcpr_stpt_name:
+            elif key in self.duct_stcpr_stpt_name:
                 self.stcpr_stpt_data = value
-            elif key == self.duct_stcpr_name:
+            elif key in self.duct_stcpr_name:
                 self.stcpr_data = value
-            elif key == self.sat_stpt_name:
+            elif key in self.sat_stpt_name:
                 self.sat_stpt_data = value
-            elif key == self.sa_temp_name:
+            elif key in self.sa_temp_name:
                 self.sat_data = value
-            elif key == self.zn_reheat_name:
+            elif key in self.zn_reheat_name:
                 self.zn_rht_data = value
-            elif key == self.zn_damper_name:
+            elif key in self.zn_damper_name:
                 self.zn_dmpr_data = value
-            elif key == self.fan_sp_name:
+            elif key in self.fan_sp_name:
                 self.fan_sp_data = value
 
     def check_for_missing_data(self):
