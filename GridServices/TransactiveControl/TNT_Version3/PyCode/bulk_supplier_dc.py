@@ -68,7 +68,7 @@ from .const import *
 from .vertex import Vertex
 from .timer import Timer
 from .market_state import MarketState
-from data_manager import append_table
+from .data_manager import append_table
 
 utils.setup_logging()
 _log = logging.getLogger(__name__)

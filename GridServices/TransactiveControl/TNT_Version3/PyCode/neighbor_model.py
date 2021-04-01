@@ -1257,7 +1257,6 @@ class Neighbor(object):
         demand_threshold = -self.demandThreshold
         active_threshold = demand_threshold
 
-
         # Index through the active time intervals.
         for i in range(len(time_intervals)):
 
@@ -1273,7 +1272,6 @@ class Neighbor(object):
             if vertices is None:
                 RuntimeError('No summed vertices were found in method prep_transactive_signal for neighbor '
                                + self.name + ' in time interval ' + time_interval_name)
-
 
             # Find the minimum and maximum powers from the summed vertices. These are soft constraints that represent a
             # range of flexibility. The range will usually be excessively large from the supply side, much smaller from
