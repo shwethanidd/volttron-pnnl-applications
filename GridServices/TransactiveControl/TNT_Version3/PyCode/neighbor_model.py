@@ -1467,7 +1467,7 @@ class Neighbor(object):
         active_time_interval_names = [x.name for x in active_time_intervals]
         self.sentSignal = [x for x in self.sentSignal if x.timeInterval in active_time_interval_names]
 
-    def receive_transactive_signal(self, market, this_transactive_node, curves=None):
+    def receive_transactive_signal(self, this_transactive_node, market, curves=None):
         # Receive and save transactive records from a transactive Neighbor.
         # this_transactive_node = Agent's TransactiveNode object
         #
@@ -1499,15 +1499,27 @@ class Neighbor(object):
         newly_received_records = []
 
         for curve in curves:
-            market_name = curve['marketName']
-            newly_received_records.append(TransactiveRecord(time_interval=curve['timeInterval'],
-                                                            record=int(curve['record']),
-                                                            marginal_price=float(curve['marginalPrice']),
-                                                            power=float(curve['power']),
-                                                            cost=float(curve['cost']),
-                                                            neighbor_name=curve['neighborName'],
-                                                            direction='received',
-                                                            market_name=market_name))
+            # 210303DJH: This trick is not needed if the market is received as a parameter. The market name can be used
+            #            directly.
+            # market_name = curve['timeInterval'].split(':')
+            # market_name = market_name[0]
+            if curve['marketName'] == market.name:
+                new_record = TransactiveRecord(time_interval=curve['timeInterval'],
+                                               record=int(curve['record']),
+                                                marginal_price=float(curve['marginalPrice']),
+                                                power=float(curve['power']),
+                                                cost=float(curve['cost'])
+                                                )
+                # 210303DJH: I'm separating out this assignment because the passed parameters don't seem to be used
+                #            properly.
+                #            TODO: Please recheck the initialization of class TransactiveRecord to make sure the new
+                #             properties were included.
+                new_record.neighborName = self.name
+                new_record.direction = 'received'
+                new_record.marketName = market.name
+
+                newly_received_records.append(new_record)
+
         self.receivedSignal.extend(newly_received_records)
 
         # 210127DJH: Save the newly received records to a formatted csv table.
@@ -1838,7 +1850,7 @@ class Neighbor(object):
         # Find the set of unique time intervals among the list curves.
         time_intervals = set([x.timeInterval for x in curves])
 
-        if time_intervals != 1:
+        if len(time_intervals) != 1:
             raise Warning('The curves sent to Neighbor.curves_to_curves should all be in the same time interval.')
 
         # Initialize the list of vertices that is to be returned.
