@@ -154,15 +154,15 @@ class Auction(Market):
                 topics = []
 
                 headers = {headers_mod.DATE: format_timestamp(Timer.get_cur_time())}
-            for local_asset in my_transactive_node.localAssets:
-                # Publish local asset info
-                topic = "{}/{}".format(my_transactive_node.local_asset_topic,
-                                       local_asset.name)
-                msg = local_asset.getDict()
-                headers = {headers_mod.DATE: format_timestamp(Timer.get_cur_time())}
-                #_log.debug(
-                #    "AUCTION:while_in_negotiation: {} and info: {}".format(topic, msg))
-                #my_transactive_node.vip.pubsub.publish("pubsub", topic, headers, msg)
+                for local_asset in my_transactive_node.localAssets:
+                    # Publish local asset info
+                    topic = "{}/{}".format(my_transactive_node.local_asset_topic,
+                                           local_asset.name)
+                    msg = local_asset.getDict()
+                    headers = {headers_mod.DATE: format_timestamp(Timer.get_cur_time())}
+                    #_log.debug(
+                    #    "AUCTION:while_in_negotiation: {} and info: {}".format(topic, msg))
+                    #my_transactive_node.vip.pubsub.publish("pubsub", topic, headers, msg)
 
                 self.converged = True
                 # 210208DJH: This new flag must be set true to leave this state and allow the next transition.

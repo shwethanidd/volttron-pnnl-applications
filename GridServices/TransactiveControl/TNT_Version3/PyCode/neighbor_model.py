@@ -1257,6 +1257,8 @@ class Neighbor(object):
         demand_threshold = -self.demandThreshold
         active_threshold = demand_threshold
 
+        # 210303DJH: Create a list to gather new signal records.
+        new_signal = []
 
         # Index through the active time intervals.
         for i in range(len(time_intervals)):
@@ -1359,16 +1361,26 @@ class Neighbor(object):
                 # Pick out the indexed vertex.
                 vertex = vertices[v]
 
-                self.mySignal.append(TransactiveRecord(time_interval=time_interval_name,
-                                                       record=int(v),
-                                                       marginal_price=vertex.marginalPrice,
-                                                       power=vertex.power,
-                                                       cost=0,
-                                                       neighbor_name=self.name,
-                                                       direction='prepared',
-                                                       market_name=market.name
-                                                       )
-                                     )
+                # 210126DJH: Appending Transactive Record with new properties that help with data collection provenance.
+                new_record = TransactiveRecord(time_interval=time_interval_name,
+                                               record=int(v),
+                                               marginal_price=vertex.marginalPrice,
+                                               power=vertex.power,
+                                               cost=0
+                                               )
+                # 210303DJH: These assignments are being made explicitly to ensure that the correct parameter names are
+                #            assigned. TODO: Check that class TransactiveRecord was updated.
+                new_record.neighborName = self.name
+                new_record.direction = 'prepared'
+                new_record.marketName = market.name
+
+                new_signal.append(new_record)
+
+        # 210303DJH: Extend the new signal records to mySignal.
+        self.mySignal.extend(new_signal)
+
+        # 210303DJH: Save a copy of the newly prepared signal records to a CSV file.
+        append_table(obj=new_signal)
 
         # 201013DJH: Trim the list of transactive records in mySignal if they reference time intervals that are no
         #            longer in active markets.
