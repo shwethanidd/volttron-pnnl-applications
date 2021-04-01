@@ -1380,7 +1380,8 @@ class Neighbor(object):
         self.mySignal.extend(new_signal)
 
         # 210303DJH: Save a copy of the newly prepared signal records to a CSV file.
-        append_table(obj=new_signal)
+        if new_signal:
+            append_table(obj=new_signal)
 
         # 201013DJH: Trim the list of transactive records in mySignal if they reference time intervals that are no
         #            longer in active markets.
@@ -1457,7 +1458,8 @@ class Neighbor(object):
         self.sentSignal.extend(transactive_records)
 
         # 210127DJH: Save the newly sent transactive records to a formatted csv table.
-        append_table(obj=transactive_records)
+        if transactive_records:
+            append_table(obj=transactive_records)
 
         # 210127DJH: Trim any records in the sentSignal list if their markets and time intervals are no longer active.
         active_markets = [x for x in this_transactive_node.markets]
@@ -1523,7 +1525,8 @@ class Neighbor(object):
         self.receivedSignal.extend(newly_received_records)
 
         # 210127DJH: Save the newly received records to a formatted csv table.
-        append_table(obj=newly_received_records)
+        if newly_received_records:
+            append_table(obj=newly_received_records)
 
         # 210127DJH: Trim the receviedSignal list to remove any expired markets and time intervals.
         active_markets = [x for x in this_transactive_node.markets]
