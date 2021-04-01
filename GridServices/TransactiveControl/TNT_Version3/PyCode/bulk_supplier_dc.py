@@ -68,6 +68,7 @@ from .const import *
 from .vertex import Vertex
 from .timer import Timer
 from .market_state import MarketState
+from data_manager import append_table
 
 utils.setup_logging()
 _log = logging.getLogger(__name__)
@@ -125,14 +126,27 @@ class BulkSupplier_dc(Neighbor):
         demand_threshold = self.demandThreshold
         active_threshold = demand_threshold
 
+        # 210331DJH: This is an error for markets that have multiple market time intervals. If initialized here, each
+        #            successive time interval adds to the list of vertices, each having been potentially modified by the
+        #            prior calculations. This initialization belongs *INSIDE* teh time interval loop.
         # Initialize the list of vertices that are to become the active vertices.
-        vertices = []
+        # vertices = []
+
+        # 210321DJH:
+        new_active_vertices = []
 
         # Index through active time intervals.
         for i in range(len(time_intervals)):
 
             # Pick out the indexed time interval.
             time_interval = time_intervals[i]
+
+            # 210331DJH: This initialization fixes a logic error for markets that have multiple market time intervals.
+            #            The initialization belongs *INSIDE* teh time interval loop.
+            #            BTW, the mistake was not found during unit testing because unit testing did not challenge the
+            #            method with multiple time periods.
+            # Initialize the list of vertices that are to become the active vertices.
+            vertices = []
 
             # Find the month number for the indexed time interval start time. The month is needed for rate lookup
             # tables.
@@ -191,13 +205,18 @@ class BulkSupplier_dc(Neighbor):
                 vertex = vertices[v]
 
                 # Append the vertex to the neighbor's active vertices as interval values.
-                self.activeVertices.append(IntervalValue(calling_object=self,
+                new_active_vertices.append(IntervalValue(calling_object=self,
                                                          time_interval=time_interval,
                                                          market=market,
                                                          measurement_type=MeasurementType.ActiveVertex,
                                                          value=vertex
                                                          )
                                            )
+
+        # 210331DJH: This modification using "new_active_vertices" allows the new active vertices to be captured easily
+        #            as CSV records.
+        self.activeVertices.extend(new_active_vertices)
+        append_table(obj=new_active_vertices)
 
         # 200929DJH: Trim any active vertices that lie in expired markets.
         self.activeVertices = [x for x in self.activeVertices if x.market.marketState != MarketState.Expired]
