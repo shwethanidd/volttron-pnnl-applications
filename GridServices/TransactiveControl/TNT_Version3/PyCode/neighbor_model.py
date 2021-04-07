@@ -1546,7 +1546,7 @@ class Neighbor(object):
         #             been derived from received transactive records. The remote neighbor supplies these records from
         #             its own perspective at the border of its circuit, excluding transport. This method will modify and
         #             return updated vertices. NOTE: the set of vertices should be for precisely one time interval.
-        # - threshold: Power demand threshold this time interval.
+        # - threshold: Power demand threshold this time interval.88
         #
         # USES:
         # - self.maximumPower:
