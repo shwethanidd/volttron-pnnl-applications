@@ -93,12 +93,19 @@ class DayAheadAuction(Auction):
         market_interval_start_times = [x.startTime for x in market.timeIntervals]
         market_interval_start_times.sort()
 
+        # 210401DJH: This initialization of new_market_list had been misplaced, thus causing only the final hour's Real-
+        #            Time markets to be captured as CSV records. It should be initialized prior to looping through the
+        #            Day-Ahead market hours, as placed here.
+        new_market_list = []
+
         for i in range(len(market_interval_start_times)):
 
             interval_start = market_interval_start_times[i]
             interval_end = interval_start + market.intervalDuration
 
-            new_market_list = []
+            # 210401DJH: This initialization of new_market_list is misplaced, thus causing only the final hour's Real-
+            #            Time markets to be captured as CSV records.
+            # new_market_list = []
             while interval_start < interval_end:
 
                 # Instantiate a new real-time market.

@@ -1276,7 +1276,6 @@ class Neighbor(object):
                 RuntimeError('No summed vertices were found in method prep_transactive_signal for neighbor '
                                + self.name + ' in time interval ' + time_interval_name)
 
-
             # Find the minimum and maximum powers from the summed vertices. These are soft constraints that represent a
             # range of flexibility. The range will usually be excessively large from the supply side, much smaller from
             # the demand side.
@@ -1575,7 +1574,7 @@ class Neighbor(object):
         #             been derived from received transactive records. The remote neighbor supplies these records from
         #             its own perspective at the border of its circuit, excluding transport. This method will modify and
         #             return updated vertices. NOTE: the set of vertices should be for precisely one time interval.
-        # - threshold: Power demand threshold this time interval.
+        # - threshold: Power demand threshold this time interval.88
         #
         # USES:
         # - self.maximumPower:
