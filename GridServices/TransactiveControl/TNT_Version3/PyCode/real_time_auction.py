@@ -69,3 +69,21 @@ class RealTimeAuction(Auction):
         # In this case, the real-time auctions are spawned by the day-ahead markets. Therefore, the real-time markets
         # should not instantiate ANY market objects. The base class method is replaced.
         pass
+    
+    def transition_from_delivery_lead_to_delivery(self, my_transactive_node):
+        """
+        For activities that should accompany a market object's transition from market state "DeliveryLead" to
+        "Delivery." This method may be overwritten by child classes of Market to create alternative market behaviors
+        during this transition.
+        :param my_transactive_node: transactive node object--this agent
+        :return: None
+        """
+        k = 4*14
+        # A good practice upon entering the delivery period is to update the market's price model using the final
+        # marginal prices.
+        final_prices = self.marginalPrices
+        for x in range(len(final_prices)):
+            self.model_prices(final_prices[x].timeInterval.startTime, final_prices[x].value, k=k)
+
+        self.deliverylead_schedule_power = False
+        return None
