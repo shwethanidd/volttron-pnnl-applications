@@ -780,6 +780,7 @@ class BuildingAgent(MarketAgent, TransactiveNode):
             _log.debug("At {}: Report aggregate Market: {} buyer Curve: {}".format(Timer.get_cur_time(),
                                                                                    market_name,
                                                                                    aggregate_demand))
+            self.real_time_building_demand_curve = [(aggregate_demand.points[0], aggregate_demand.points[-1])]
             db_topic = "/".join([self.db_topic, self.name, "AggregateDemand"])
             message = {
                 "Timestamp": format_timestamp(timestamp),
@@ -788,7 +789,6 @@ class BuildingAgent(MarketAgent, TransactiveNode):
             }
             headers = {headers_mod.DATE: format_timestamp(Timer.get_cur_time())}
             self.vip.pubsub.publish("pubsub", db_topic, headers, message).get()
-            self.real_time_building_demand_curve = [(aggregate_demand.points[0], aggregate_demand.points[-1])]
 
     def real_time_price_callback(self, timestamp, market_name, buyer_seller, price, quantity):
         _log.debug("{}: cleared price ({}, {}) for {} as {} at {}".format(Timer.get_cur_time(),
@@ -899,6 +899,7 @@ class BuildingAgent(MarketAgent, TransactiveNode):
                                                                                    market_name,
                                                                                    aggregate_demand))
             idx = int(market_name.split('_')[-1])
+            self.building_demand_curves[idx] = (aggregate_demand.points[0], aggregate_demand.points[-1])
             #idx += 1  # quantity has 25 values while there are 24 future markets
             db_topic = "/".join([self.db_topic, self.name, "AggregateDemand"])
             message = {
@@ -908,7 +909,6 @@ class BuildingAgent(MarketAgent, TransactiveNode):
             }
             headers = {headers_mod.DATE: format_timestamp(Timer.get_cur_time())}
             self.vip.pubsub.publish("pubsub", db_topic, headers, message).get()
-            self.building_demand_curves[idx] = (aggregate_demand.points[0], aggregate_demand.points[-1])
 
     def price_callback(self, timestamp, market_name, buyer_seller, price, quantity):
         _log.debug("{}: cleared price ({}, {}) for {} as {} at {}".format(Timer.get_cur_time(),
