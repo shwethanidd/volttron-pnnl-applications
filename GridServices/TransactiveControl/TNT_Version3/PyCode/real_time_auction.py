@@ -56,8 +56,16 @@
 
 # }}}
 
+import logging
 
 from .auction import Auction
+from .timer import Timer
+from volttron.platform.agent import utils
+from volttron.platform.messaging import headers as headers_mod
+from volttron.platform.agent.utils import format_timestamp
+
+utils.setup_logging()
+_log = logging.getLogger(__name__)
 
 
 class RealTimeAuction(Auction):
@@ -86,4 +94,15 @@ class RealTimeAuction(Auction):
             self.model_prices(final_prices[x].timeInterval.startTime, final_prices[x].value, k=k)
 
         self.deliverylead_schedule_power = False
+
+        _log.debug(f"{self.name}: transition_from_delivery_lead_to_delivery")
+
+        headers = {headers_mod.DATE: format_timestamp(Timer.get_cur_time())}
+        msg = dict()
+        msg['tnt_market_name'] = self.name
+        my_transactive_node.vip.pubsub.publish(peer='pubsub',
+                                               topic=my_transactive_node.market_balanced_price_topic,
+                                               headers=headers,
+                                               message=msg)
+        self.publish_records(my_transactive_node)
         return None
