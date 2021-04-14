@@ -17,7 +17,7 @@ class Model(object):
         self.cleared_quantity = None
         if not config:
             return
-        base_module = "volttron_applications.GridServices.TransactiveControl.market_base.models."
+        base_module = "transactive_utils.models."
         try:
             model_type = config["model_type"]
         except KeyError as e:
