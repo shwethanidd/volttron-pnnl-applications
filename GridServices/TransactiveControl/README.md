@@ -1,5 +1,21 @@
 # Transactive Applications
 
+## Transactive ILC Coordinator Application
+
+This application allows ILC to participate in either real-time pricing (RTP)
+markets or single-step market-based control. Further enhancements of the
+TC ILC are needed to allow for its full integration with the Transactive
+Network Template framework by adding the ability for the TC ILC to forecast
+the building flexibility over a 24-hour horizon.
+
+This work is under way and consists of the following:
+
+1. Forecasting the hourly average building demand for the next 24 hours based on historical building data and current weather conditions.
+
+2. Forecasting the hourly average flexibility of each controllable load for the next 24-hour period (i.e., an hourly average value for maximum and minimum consumptions for each controllable load) based on historical data and current weather conditions.
+
+3. The methodology for accomplishing this is in progress and this feature should be incorporated in software tested for the June milestone.
+
 ## Transactive Control and Coordination (TCC) Application
 
 TCC creates markets at different levels to make control decisions. Market-based
@@ -50,24 +66,8 @@ district chilled water plant required to serve the cooling load calculated by
 the air-handling unit, and (4) a set of RTU models for commercial buildings
 that have one or more zones conditioned by packaged rooftop air conditioners or
 heat pumps.
-
-## Transactive ILC Coordinator Application
-
-This application allows ILC to participate in either real-time pricing (RTP)
-markets or single-step market-based control. Further enhancements of the
-TC ILC are needed to allow for its full integration with the Transactive
-Network Template framework by adding the ability for the TC ILC to forecast
-the building flexibility over a 24-hour horizon.
-
-This work is under way and consists of the following:
-
-1. Forecasting the hourly average building demand for the next 24 hours based on historical building data and current weather conditions.
-
-2. Forecasting the hourly average flexibility of each controllable load for the next 24-hour period (i.e., an hourly average value for maximum and minimum consumptions for each controllable load) based on historical data and current weather conditions.
-
-3. The methodology for accomplishing this is in progress and this feature should be incorporated in software tested for the June milestone.
-
-## Example of running Transactive control agents all together in simulation mode:
+   
+### Example of running Transactive control agents all together in simulation mode:
 
 To run TCC agents all together in the simulation mode, We need to run following agents in a
 volttron environment:
@@ -82,6 +82,7 @@ For installing, starting, and activating the VOLTTRON environment, refer to the 
 https://volttron.readthedocs.io/en/develop/introduction/platform-install.html
 
 * Market-Service agent:
+
 The following JSON configuration file shows all the options currently supported by this agent.
 ````
 {
@@ -91,19 +92,21 @@ The following JSON configuration file shows all the options currently supported 
     "verbose_logging"  : 0
 }
 ````
-* Install and start MarketService agent
+Install and start MarketService agent
 
 ````
 python VOLTTRON_ROOT/scripts/install-agent.py \
-    -s services/core/MarketServiceAgent \
+    -s VOLTTRON_ROOT/services/core/MarketServiceAgent \
     -i platform.market \
     --config transactivecontrol/MarketAgents/config/BRSW/market-service-config \
     --tag market-service \
     --start \
     --force
 ````
+, where VOLTTRON_ROOT is the root of the source directory of VOLTTRON.
 
 * Install and start Energy Plus:
+
 Refer the readme of Energy plus agent for installing and
 running EnergyPlus simulation in the VOLTTRON environment
 https://github.com/VOLTTRON/volttron/tree/develop/examples/EnergyPlusAgent.
@@ -114,13 +117,18 @@ and EnergyPlus simulation.
 Install and start the energy plus agent using the following command: 
 ````
 python VOLTTRON_ROOT/scripts/install-agent.py \
-    -s volttron/pnnl/energyplusagent \
+    -s VOLTTRON_APPLICATION_ROOT/Simulations/EnergyplusAgent \
     -i platform.actuator \
     --tag eplus \
-    --config transactivecontrol/MarketAgents/config/BRSW/ep_BRSW2.config \
+    --config <Agent config file> \
     --start \
     --force
 ````
+, where VOLTTRON_ROOT, and VOLTTRON_APPLICATION_ROOT are the roots of the source directories of 
+VOLTTRON and VOLTTRON_PNNL_APPLICATION respectively.
+
+Example config file for energyplus agent can be found here: 
+VOLTTRON_APPLICATION_ROOT/Simulations/EnergyplusAgent/eplus_config
 
 For more information about EnergyPlus, please refer to https://www.energyplus.net/sites/default/files/docs/site_v8.3.0/GettingStarted/GettingStarted/index.html.
 Technical documentation about the simulation framework can be found at 
@@ -146,14 +154,18 @@ price_file: /home/vuzer/transactivecontrol/MarketAgents/config/RTP/RTP-sept.csv
 Install and start the energy plus agent using the following command:
 ````
 python VOLTTRON_ROOT/scripts/install-agent.py \
-    -s transactivecontrol/MarketAgents/PricePublisher \
-    --config  transactivecontrol/MarketAgents/config/BRSW/price_pub.config \
-    --tag price_pub \
-    -i price_pub \
+    -s VOLTTRON_APPLICATION_ROOT/UtilityAgents/PricePublisher \
+    -c  <Agent config file> \
+    -t price_pub \
+    -i agent.price_pub \
     --force \
     --start
 
 ````
+
+, where VOLTTRON_ROOT and VOLTTRON_APPLICATION_ROOT are the roots of the source directories of 
+VOLTTRON and VOLTTRON_PNNL_APPLICATION, respectively.
+
 * Install and start TCC agents:
 
 Install and start the TCC Agent using the script install-agent.py as describe below:
@@ -178,3 +190,35 @@ python VOLTTRON_ROOT/scripts/install-agent.py -s <top most folder of the agent>
 --start (optional): start after installation
 
 --force (optional): overwrites the existing agent
+
+## Transactive Network System (TNS)
+
+### Example of running Transactive control agents all together in simulation mode:
+To run TNS agents all together in the simulation mode, We need to run following agents in a
+volttron environment:
+1. MarketService agent,
+2. EnergyPlus agent,
+3. TCC agents (AHU, RTU, Lighting, Meter, VAV, etc)
+4. TNS agents (BuildingAgent, CampusAgent, CityAgent)
+
+From 1 to 3 follow the example form TCC application:
+
+* TNS agents:
+
+Install and start the BuildingAgent using the following command: 
+````
+python VOLTTRON_ROOT/scripts/install-agent.py \
+    -s VOLTTRON_APPLICATION_ROOT/GridServices/TransactiveControl/BuildingAgent \
+    -i platform.building \
+    --tag building \
+    --config <Agent config file> \
+    --start \
+    --force
+````
+, where VOLTTRON_ROOT, and VOLTTRON_APPLICATION_ROOT are the roots of the source directories of 
+VOLTTRON and VOLTTRON_PNNL_APPLICATION respectively.
+
+Similarly, Campus and City agents can be installed.
+
+Example config file for Building or City or Campus agent can be found here: 
+VOLTTRON_APPLICATION_ROOT/GridServices/TransactiveControl/(BuildingAgent or CampusAgent or CityAgent)
