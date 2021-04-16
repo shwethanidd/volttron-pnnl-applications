@@ -204,6 +204,10 @@ To facilitate the creation of distributed transactive energy networks having ful
 So far, a single reference code implementation has been created using Python, and a reference field implementation has been completed on the Pacific Northwest National Laboratory (PNNL) campus. The campus network agents model the local electric municipality, the PNNL campus, and campus buildings. Prices become differentiated by hour at these locations due to time-of-use wholesale electricity prices, wholesale demand charges, distribution energy losses, municipal demand charges, dynamic demand, and the price responses of the building control systems. The primary price-responsive elements are a set of commercial building control systems. Prices and flexible demand participate in a rolling series of 24 forward hourly intervals.
 Work continues to improve the transactive network template on several fronts: First, the market module is to be improved to accommodate commodities other than electricity and to demonstrate value exchange between the various commodities. Second, it must be demonstrated that the transactive network template can accommodate different alternative price discovery mechanisms and protocols.
 
+The TNT framework has been integrated with VOLTTRON. There are three agents - CityAgent, CampusAgent and BuildingAgent representing the city, campus and building nodes. The responsibilitites of the city, campus and building nodes are encapsulated within these agents. 
+
+The TNT framework can be made to run along with the TCC application described in the above sections. The below section provide instructions on how to run the two market frameworks together to demonstrate communication between buildings, their smart devices, the grid, and power markets to automatically and quickly negotiate power use and costs.
+
 ### Example of running Transactive control agents all together in simulation mode:
 To run TNS agents all together in the simulation mode, We need to run following agents in a
 volttron environment:
